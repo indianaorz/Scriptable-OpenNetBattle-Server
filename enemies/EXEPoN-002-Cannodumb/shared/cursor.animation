@@ -1,0 +1,20 @@
+imagePath="//mac/Home/Documents/Teblat Wonterk Server/resources/mods/enemies/EXEPoN-002-Canodumb/shared/cursor.png"
+
+animation state="CURSOR"
+frame duration="0.05" x="5" y="9" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.05" x="5" y="57" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.05" x="5" y="105" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+
+animation state="CURSOR_SHOOT"
+frame duration="0.03" x="5" y="153" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.06" x="5" y="105" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.03" x="5" y="153" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.06" x="5" y="105" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.03" x="5" y="153" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.06" x="5" y="105" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.03" x="5" y="153" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.06" x="5" y="105" w="37" h="39" originx="19" originy="35" flipx="1" flipy="0"
+frame duration="0.01" x="0" y="0" w="1" h="1" originx="0" originy="0" flipx="1" flipy="0"
+
+animation state="CURSOR_SMOKE"
+frame duration="2" x="0" y="0" w="1" h="1" originx="0" originy="0" flipx="1" flipy="0"

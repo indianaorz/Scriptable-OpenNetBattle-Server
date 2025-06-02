@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none;
+            margin: 0; /* Ensure no default body margin */
+            height: 100vh; /* Full viewport height */
+            display: flex;
+            flex-direction: column; /* Stack header and main content */
+        }
+        .header-container {
+            padding: 1rem 1.5rem; /* md:p-6 equivalent */
+            background-color: #111827; /* gray-900 for header area */
+            border-bottom: 1px solid #374151; /* gray-700 */
+        }
+        .main-editor-layout {
+            display: flex;
+            flex-grow: 1; /* Takes remaining vertical space */
+            overflow: hidden; /* Prevent overall page scroll */
+        }
+        .editor-column {
+            width: 50%;
+            height: 100%; /* Fill parent height */
+            overflow-y: auto; /* Allow scrolling within each column */
+            padding: 1.5rem; /* p-6 */
+            box-sizing: border-box;
+        }
+        .left-column {
+            background-color: #1F2937; /* gray-800 */
+            border-right: 1px solid #374151; /* gray-700 */
+        }
+        .right-column {
+            background-color: #1F2937; /* gray-800 */
+        }
+
+        #spritesheet-container {
+            position: relative;
+            display: inline-block; 
+            border: 1px solid #4A5568; /* gray-700 */
+            overflow: auto; 
+            max-width: 100%;
+            /* max-height will be controlled by column height and other elements */
+        }
+        #spritesheet-image {
+            display: block;
+            max-width: none; 
+            image-rendering: pixelated; 
+            image-rendering: -moz-crisp-edges; 
+            image-rendering: crisp-edges; 
+        }
+        #overlay-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: grab; 
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        #preview-canvas {
+            border: 1px solid #4A5568; /* gray-700 */
+            /* background-color: #2D3748; Removed to allow tile background to show */
+            image-rendering: pixelated; 
+            image-rendering: -moz-crisp-edges; 
+            image-rendering: crisp-edges; 
+        }
+        .sidebar-panel, .frame-editor-panel, #current-frames-list {
+            /* Max height can be adjusted or made more dynamic if needed */
+            max-height: 250px; 
+            overflow-y: auto;
+            background-color: #374151; /* gray-700 for inner panels */
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.75rem; /* p-3 */
+        }
+         .frame-editor-panel { /* Specific max height for frame editor if different */
+            max-height: 300px;
+         }
+
+
+        .input-field {
+            background-color: #2D3748; /* gray-800 */
+            border: 1px solid #4A5568; /* gray-700 */
+            color: #E2E8F0; /* gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.5rem 0.75rem; /* px-3 py-2 */
+            width: 100%;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #63B3ED; /* sky-400 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-sky-400 */
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #3B82F6; /* blue-500 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563EB; /* blue-600 */
+        }
+        .btn-secondary {
+            background-color: #4A5568; /* gray-600 */
+            color: #E2E8F0; /* gray-300 */
+        }
+        .btn-secondary:hover {
+            background-color: #2D3748; /* gray-700 */
+        }
+         .btn-danger {
+            background-color: #EF4444; /* red-500 */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #DC2626; /* red-600 */
+        }
+        .small-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem; /* text-sm */
+        }
+        .zoom-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+    <div class="header-container">
+        <div class="container mx-auto">
+             <div class="flex justify-between items-center">
+                <div>
+                    <a href="{{ url_for('index') }}" class="text-sky-400 hover:text-sky-300">&larr; Back to Animations List</a>
+                    <h1 class="text-2xl md:text-3xl font-bold text-sky-400 mt-1">
+                        Editing: <span id="animation-filename-display" class="text-sky-200">{{ animation_filename }}</span>
+                    </h1>
+                </div>
+                <button id="save-animation-button" class="btn btn-primary">Save Animation</button>
+                <button id="apply-offset-all-button" class="btn btn-primary">Apply Offset</button>
+            </div>
+        <div id="save-status-message" class="text-center mb-4"  style="position:fixed; top:20px"></div>
+        </div>
+    </div>
+
+    <div id="loading-message" class="text-center text-xl text-yellow-400 my-10 flex-grow flex items-center justify-center">Loading animation data...</div>
+    <div id="error-message" class="hidden text-center text-xl text-red-400 my-10 p-4 bg-red-900 border border-red-700 rounded-md flex-grow flex items-center justify-center"></div>
+
+    <main id="editor-content" class="hidden main-editor-layout">
+        <div class="editor-column left-column space-y-4">
+            <div class="flex justify-between items-center">
+                <label for="image-path-input" class="block text-sm font-medium text-sky-300">Spritesheet Image Path:</label>
+                <div class="flex items-center space-x-1">
+                    <button id="zoom-out-button" class="btn btn-secondary zoom-btn small-btn">-</button>
+                    <span id="zoom-level-display" class="text-sm text-gray-300 w-12 text-center">100%</span>
+                    <button id="zoom-in-button" class="btn btn-secondary zoom-btn small-btn">+</button>
+                </div>
+            </div>
+            <input type="text" id="image-path-input" class="input-field text-sm" placeholder="e.g., character.png or subfolder/sprite.png">
+            
+            <h2 class="text-xl font-semibold text-sky-300 pt-2">Spritesheet Preview</h2>
+            <div id="spritesheet-container" class="flex-grow">
+                <img id="spritesheet-image" alt="Spritesheet" src="" class="rounded"/>
+                <canvas id="overlay-canvas"></canvas>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Scroll to view. Click & drag frames on the image above.</p>
+        </div>
+
+        <div class="editor-column right-column space-y-6">
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-semibold text-sky-300">Animation States</h2>
+                    <button id="add-animation-state-button" class="btn btn-secondary btn-sm small-btn">+ Add State</button>
+                </div>
+                <div id="animation-states-list-container" class="sidebar-panel">
+                    <ul id="animation-states-list" class="space-y-1"></ul>
+                </div>
+            </div>
+            
+            <div>
+                <h2 class="text-xl font-semibold text-sky-300 mb-2">Animation Preview</h2>
+                <div class="flex justify-center items-center bg-gray-800 p-2 rounded-md"> 
+                    <canvas id="preview-canvas" width="200" height="200" class="rounded-md"></canvas>
+                </div>
+                <p id="current-animation-info" class="text-center text-sm text-gray-400 mt-1">- Select an animation state -</p>
+            </div>
+
+            <div>
+                <h2 class="text-xl font-semibold text-sky-300 mb-2">Frame Editor</h2>
+                <div id="frame-editor-panel" class="space-y-3 frame-editor-panel">
+                    <p id="frame-editor-placeholder" class="text-gray-400">Select an animation state, then a frame to edit its properties.</p>
+                </div>
+            </div>
+            
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="text-lg font-medium text-sky-300">Frames in Selected State:</h3>
+                    <button id="add-frame-button" class="btn btn-secondary btn-sm small-btn hidden">+ Add Frame</button>
+                </div>
+                <div id="current-frames-list" class="sidebar-panel">
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <img id="loaded-spritesheet-source" alt="" style="display:none;">
+
+    <script>
+        const ANIMATION_FILENAME = "{{ animation_filename }}";
+        const API_ENDPOINT_LOAD = "{{ url_for('get_animation_data', animation_filename=animation_filename) }}";
+        const API_ENDPOINT_SAVE = "{{ url_for('save_animation_data', animation_filename=animation_filename) }}";
+        const PREVIEW_TILE_URL = "{{ url_for('static', filename='sampletile.png') }}"; // Added this line
+        function getAssetUrl(imagePath) {
+            return `{{ url_for('serve_animation_asset', filename='') }}${imagePath}`;
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+</body>
+</html>

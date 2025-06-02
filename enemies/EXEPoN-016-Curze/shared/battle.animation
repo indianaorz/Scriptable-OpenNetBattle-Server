@@ -1,0 +1,19 @@
+imagePath="battle.png"
+
+animation state="SPAWN"
+frame duration="0.15" x="2" y="162" w="22" h="58" originx="11" originy="54" flipx="1" flipy="0"
+
+animation state="IDLE"
+frame duration="0.15" x="2" y="162" w="22" h="58" originx="11" originy="54" flipx="1" flipy="0"
+frame duration="0.15" x="122" y="82" w="22" h="60" originx="11" originy="56" flipx="1" flipy="0"
+frame duration="0.15" x="96" y="82" w="22" h="61" originx="11" originy="57" flipx="1" flipy="0"
+frame duration="0.15" x="28" y="162" w="23" h="58" originx="11" originy="54" flipx="1" flipy="0"
+
+animation state="OPEN"
+frame duration="0.033" x="2" y="2" w="43" h="76" originx="16" originy="64" flipx="1" flipy="0"
+frame duration="0.34" x="49" y="2" w="43" h="76" originx="18" originy="64" flipx="1" flipy="0"
+
+animation state="BITE"
+frame duration="0.133" x="96" y="2" w="43" h="76" originx="16" originy="64" flipx="1" flipy="0"
+frame duration="0.033" x="2" y="82" w="43" h="76" originx="29" originy="70" flipx="1" flipy="0"
+frame duration="0.238" x="49" y="82" w="43" h="76" originx="26" originy="66" flipx="1" flipy="0"

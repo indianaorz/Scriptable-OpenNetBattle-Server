@@ -1,0 +1,7 @@
+imagePath="D:\ONB\Teblat Wonterk Server\resources\mods\enemies\EXE4-047-Forte1\Forte\gfx\darkarmblade1.png"
+
+animation state="0"
+frame duration="0.133" x="0" y="0" w="85" h="32" originx="32" originy="30" flipx="0" flipy="0"
+frame duration="0.083" x="0" y="32" w="71" h="26" originx="18" originy="30" flipx="0" flipy="0"
+frame duration="0.05" x="0" y="58" w="71" h="18" originx="18" originy="30" flipx="0" flipy="0"
+frame duration="0.033" x="0" y="76" w="51" h="8" originx="-3" originy="27" flipx="0" flipy="0"

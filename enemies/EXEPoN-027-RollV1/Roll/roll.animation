@@ -1,0 +1,76 @@
+imagePath="roll.png"
+
+animation state="IDLE_1"
+frame duration="0.1" x="423" y="2" w="34" h="64" originx="21" originy="62" flipx="0" flipy="0"
+
+animation state="IDLE_2"
+frame duration="0.1" x="420" y="92" w="34" h="63" originx="21" originy="61" flipx="0" flipy="0"
+
+animation state="IDLE_3"
+frame duration="0.1" x="461" y="2" w="34" h="64" originx="21" originy="62" flipx="0" flipy="0"
+
+animation state="IDLE_4"
+frame duration="0.1" x="385" y="2" w="34" h="65" originx="21" originy="63" flipx="0" flipy="0"
+
+animation state="FLINCH_1"
+frame duration="0.1" x="277" y="361" w="37" h="59" originx="26" originy="57" flipx="0" flipy="0"
+
+animation state="FLINCH_2"
+frame duration="0.1" x="318" y="361" w="37" h="59" originx="27" originy="57" flipx="0" flipy="0"
+
+animation state="FLINCH_3"
+frame duration="0.1" x="359" y="361" w="37" h="59" originx="28" originy="57" flipx="0" flipy="0"
+
+animation state="FLINCH_4"
+frame duration="0.1" x="400" y="361" w="37" h="59" originx="27" originy="57" flipx="0" flipy="0"
+
+animation state="FLINCH_5"
+frame duration="0.1" x="441" y="361" w="37" h="59" originx="28" originy="57" flipx="0" flipy="0"
+
+animation state="FLINCH_6"
+frame duration="0.1" x="457" y="294" w="37" h="59" originx="26" originy="57" flipx="0" flipy="0"
+
+animation state="FLINCH_7"
+frame duration="0.1" x="244" y="361" w="29" h="60" originx="11" originy="58" flipx="0" flipy="0"
+
+animation state="FLINCH_8"
+frame duration="0.1" x="458" y="92" w="38" h="63" originx="23" originy="61" flipx="0" flipy="0"
+
+animation state="FLINCH_9"
+frame duration="0.1" x="2" y="92" w="34" h="64" originx="21" originy="62" flipx="0" flipy="0"
+
+animation state="STUN_1"
+frame duration="0.1" x="2" y="428" w="37" h="59" originx="28" originy="57" flipx="0" flipy="0"
+
+animation state="WARP_1"
+frame duration="0.1" x="116" y="92" w="34" h="64" originx="21" originy="62" flipx="0" flipy="0"
+
+animation state="WARP_2"
+frame duration="0.1" x="154" y="92" w="34" h="64" originx="21" originy="62" flipx="0" flipy="0"
+
+animation state="WARP_3"
+frame duration="0.1" x="347" y="2" w="34" h="69" originx="21" originy="67" flipx="0" flipy="0"
+
+animation state="WARP_4"
+frame duration="0.1" x="180" y="2" w="32" h="75" originx="21" originy="73" flipx="0" flipy="0"
+
+animation state="ROLLARROW_1"
+frame duration="0.033" x="44" y="160" w="46" h="63" originx="25" originy="61" flipx="0" flipy="0"
+
+animation state="ROLLARROW_2"
+frame duration="0.017" x="94" y="160" w="44" h="63" originx="26" originy="61" flipx="0" flipy="0"
+
+animation state="ROLLARROW_3"
+frame duration="0.033" x="142" y="160" w="45" h="63" originx="26" originy="61" flipx="0" flipy="0"
+
+animation state="ROLLWHIP_1"
+frame duration="0.017" x="306" y="92" w="34" h="64" originx="21" originy="62" flipx="0" flipy="0"
+
+animation state="ROLLWHIP_2"
+frame duration="0.033" x="90" y="227" w="38" h="63" originx="23" originy="61" flipx="0" flipy="0"
+
+animation state="ROLLWHIP_3"
+frame duration="0.033" x="141" y="361" w="26" h="62" originx="14" originy="60" flipx="0" flipy="0"
+
+animation state="ROLLWHIP_4"
+frame duration="0.033" x="102" y="491" w="40" h="49" originx="11" originy="47" flipx="0" flipy="0"

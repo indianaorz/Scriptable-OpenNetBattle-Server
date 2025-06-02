@@ -1,0 +1,7 @@
+animation state="0"
+frame duration="0.067" x="2" y="2" w="50" h="72" originx="27" originy="80" flipx="1"
+frame duration="0.05" x="56" y="2" w="35" h="59" originx="27" originy="80" flipx="1"
+frame duration="0.05" x="2" y="78" w="27" h="49" originx="24" originy="80" flipx="1"
+frame duration="0.033" x="33" y="78" w="20" h="37" originx="17" originy="80" flipx="1"
+frame duration="0.033" x="57" y="78" w="14" h="13" originx="11" originy="80" flipx="1"
+

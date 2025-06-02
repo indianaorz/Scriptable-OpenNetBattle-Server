@@ -1,0 +1,5 @@
+The code is made by Keristero and K1rbYat1Na.
+The sprites and palettes are ripped from Rockman EXE6. Sprites by Keristero. Palettes by K1rbYat1Na.
+The background is ripped from Rockman EXE6. Ripped by K1rbYat1Na.
+The sound effects are ripped from the Advanced Collection version of Rockman EXE6.
+The .ogg music file is from Khinsider.

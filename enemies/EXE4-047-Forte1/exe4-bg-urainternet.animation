@@ -1,0 +1,7 @@
+imagePath="D:\ONB\Teblat Wonterk Server\resources\mods\enemies\EXE4-047-Forte1\exe4-bg-urainternet.png"
+
+animation state="BG"
+frame duration="0.05" x="0" y="0" w="256" h="256" originx="0" originy="0" flipx="0" flipy="0"
+frame duration="0.067" x="256" y="0" w="256" h="256" originx="0" originy="0" flipx="0" flipy="0"
+frame duration="0.067" x="0" y="256" w="256" h="256" originx="0" originy="0" flipx="0" flipy="0"
+frame duration="0.083" x="256" y="256" w="256" h="256" originx="0" originy="0" flipx="0" flipy="0"

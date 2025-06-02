@@ -1,0 +1,5 @@
+imagePath="D:/ONB/Teblat Wonterk Server/resources/mods/enemies/EXE6-001-Metall/shared/gfx/mob_move.png"
+
+animation state="0"
+frame duration="0.017" x="0" y="0" w="30" h="32" originx="15" originy="19" flipx="0" flipy="0"
+frame duration="0.033" x="30" y="0" w="25" h="40" originx="13" originy="23" flipx="0" flipy="0"

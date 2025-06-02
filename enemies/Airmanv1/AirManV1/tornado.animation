@@ -1,0 +1,6 @@
+animation state="1"
+frame duration="0.05" x="2" y="36" w="26" h="29" originx="12" originy="28"
+frame duration="0.05" x="2" y="2" w="27" h="30" originx="13" originy="29"
+frame duration="0.05" x="33" y="2" w="27" h="30" originx="14" originy="29"
+frame duration="0.05" x="32" y="36" w="27" h="28" originx="14" originy="27"
+

@@ -1,0 +1,11 @@
+imagePath="rabiring.png"
+
+animation state="0"
+frame duration="0.06" x="6" y="27" w="40" h="40" originx="20" originy="27" flipx="0" flipy="0"
+frame duration="0.03" x="0" y="0" w="1" h="1" originx="0" originy="0" flipx="0" flipy="0"
+frame duration="0.045" x="55" y="27" w="40" h="40" originx="20" originy="27" flipx="0" flipy="0"
+frame duration="0.03" x="0" y="0" w="1" h="1" originx="0" originy="0" flipx="0" flipy="0"
+frame duration="0.03" x="100" y="27" w="47" h="40" originx="23" originy="27" flipx="0" flipy="0"
+frame duration="0.03" x="203" y="27" w="40" h="40" originx="20" originy="27" flipx="0" flipy="0"
+frame duration="0.045" x="55" y="27" w="40" h="40" originx="20" originy="27" flipx="0" flipy="0"
+frame duration="0.03" x="0" y="0" w="1" h="1" originx="0" originy="0" flipx="0" flipy="0"

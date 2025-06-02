@@ -1,0 +1,23 @@
+animation state="BUBBLESPAWN"
+frame duration="0.05" x="92" y="102" w="5" h="11" originx="3" originy="10"
+frame duration="0.05" x="81" y="102" w="7" h="12" originx="4" originy="11"
+frame duration="0.05" x="66" y="102" w="11" h="14" originx="6" originy="12"
+frame duration="0.05" x="31" y="80" w="15" h="17" originx="8" originy="14"
+
+animation state="BUBBLEBOUNCE"
+frame duration="0.067" x="29" y="57" w="25" h="18" originx="13" originy="15"
+frame duration="0.05" x="50" y="80" w="27" h="17" originx="14" originy="14"
+frame duration="0.067" x="33" y="102" w="29" h="16" originx="15" originy="13"
+frame duration="0.05" x="2" y="102" w="27" h="17" originx="14" originy="14"
+frame duration="0.067" x="58" y="57" w="25" h="18" originx="13" originy="15"
+frame duration="0.05" x="62" y="31" w="23" h="19" originx="12" originy="16"
+frame duration="0.067" x="37" y="31" w="21" h="20" originx="11" originy="17"
+frame duration="0.05" x="2" y="57" w="23" h="19" originx="12" originy="16"
+
+animation state="BUBBLEPOP"
+frame duration="0.017" x="2" y="80" w="25" h="18" originx="13" originy="15"
+frame duration="0.033" x="2" y="31" w="31" h="22" originx="16" originy="19"
+frame duration="0.033" x="2" y="2" w="31" h="25" originx="16" originy="20"
+frame duration="0.033" x="37" y="2" w="29" h="23" originx="15" originy="19"
+frame duration="0.033" x="70" y="2" w="29" h="23" originx="15" originy="19"
+

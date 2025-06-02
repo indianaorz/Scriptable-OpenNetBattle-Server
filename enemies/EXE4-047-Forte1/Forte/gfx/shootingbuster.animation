@@ -1,0 +1,11 @@
+imagePath="D:\ONB\Teblat Wonterk Server\resources\mods\enemies\EXE4-047-Forte1\Forte\gfx\shootingbuster.png"
+
+animation state="0"
+blank duration="0.033"
+
+animation state="1"
+frame duration="0.033" x="0" y="0" w="28" h="14" originx="14" originy="10" flipx="0" flipy="0"
+frame duration="0.05" x="28" y="0" w="38" h="38" originx="24" originy="34" flipx="0" flipy="0"
+frame duration="0.05" x="66" y="0" w="38" h="38" originx="24" originy="34" flipx="0" flipy="0"
+frame duration="0.033" x="104" y="0" w="37" h="38" originx="22" originy="34" flipx="0" flipy="0"
+frame duration="0.033" x="141" y="0" w="46" h="41" originx="27" originy="39" flipx="0" flipy="0"

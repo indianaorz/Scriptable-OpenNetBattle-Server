@@ -1,0 +1,17 @@
+animation state="SPAWN"
+frame duration="0.167" x="51" y="54" w="48" h="47" originx="20" originy="43"
+
+animation state="IDLE"
+frame duration="0.167" x="51" y="54" w="48" h="47" originx="20" originy="43"
+frame duration="0.167" x="2" y="2" w="47" h="48" originx="21" originy="44"
+frame duration="0.183" x="53" y="2" w="45" h="48" originx="20" originy="44"
+frame duration="0.133" x="102" y="2" w="47" h="48" originx="21" originy="44"
+
+animation state="ATTACK"
+frame duration="0.017" x="103" y="54" w="48" h="47" originx="20" originy="43"
+frame duration="0.017" x="2" y="106" w="46" h="44" originx="27" originy="40"
+frame duration="0.017" x="52" y="106" w="46" h="44" originx="29" originy="40"
+frame duration="0.033" x="102" y="106" w="46" h="44" originx="31" originy="40"
+frame duration="0.133" x="2" y="154" w="46" h="44" originx="29" originy="40"
+frame duration="0.033" x="2" y="54" w="45" h="48" originx="23" originy="44"
+

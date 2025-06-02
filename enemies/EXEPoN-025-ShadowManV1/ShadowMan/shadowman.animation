@@ -1,0 +1,105 @@
+imagePath="shadowman.png"
+
+animation state="IDLE_1"
+frame duration="0.1" x="443" y="2" w="51" h="78" originx="28" originy="76" flipx="0" flipy="0"
+
+animation state="IDLE_2"
+frame duration="0.1" x="442" y="90" w="51" h="77" originx="28" originy="75" flipx="0" flipy="0"
+
+animation state="IDLE_3"
+frame duration="0.1" x="2" y="415" w="51" h="76" originx="28" originy="74" flipx="0" flipy="0"
+
+animation state="IDLE_4"
+frame duration="0.1" x="112" y="415" w="51" h="75" originx="28" originy="73" flipx="0" flipy="0"
+
+animation state="IDLE_5"
+frame duration="0.1" x="57" y="415" w="51" h="76" originx="28" originy="74" flipx="0" flipy="0"
+
+animation state="IDLE_6"
+frame duration="0.1" x="497" y="90" w="51" h="77" originx="28" originy="75" flipx="0" flipy="0"
+
+animation state="FLINCH_1"
+frame duration="0.067" x="311" y="495" w="52" h="73" originx="29" originy="71" flipx="0" flipy="0"
+
+animation state="FLINCH_2"
+frame duration="0.033" x="539" y="495" w="49" h="71" originx="32" originy="69" flipx="0" flipy="0"
+
+animation state="FLINCH_3"
+frame duration="0.033" x="2" y="574" w="49" h="71" originx="33" originy="69" flipx="0" flipy="0"
+
+animation state="FLINCH_4"
+frame duration="0.033" x="55" y="574" w="49" h="71" originx="32" originy="69" flipx="0" flipy="0"
+
+animation state="FLINCH_5"
+frame duration="0.033" x="108" y="574" w="49" h="71" originx="33" originy="69" flipx="0" flipy="0"
+
+animation state="FLINCH_6"
+frame duration="0.033" x="161" y="574" w="49" h="71" originx="32" originy="69" flipx="0" flipy="0"
+
+animation state="FLINCH_7"
+frame duration="0.067" x="367" y="495" w="52" h="73" originx="29" originy="71" flipx="0" flipy="0"
+
+animation state="FLINCH_8"
+frame duration="0.067" x="423" y="495" w="57" h="73" originx="27" originy="71" flipx="0" flipy="0"
+
+animation state="FLINCH_9"
+frame duration="0.033" x="498" y="2" w="51" h="78" originx="28" originy="76" flipx="0" flipy="0"
+
+animation state="STUN_1"
+frame duration="0.1" x="214" y="574" w="49" h="71" originx="33" originy="69" flipx="0" flipy="0"
+
+animation state="WARP_1"
+frame duration="0.1" x="57" y="90" w="51" h="78" originx="28" originy="76" flipx="0" flipy="0"
+
+animation state="WARP_2"
+frame duration="0.1" x="112" y="90" w="51" h="78" originx="28" originy="76" flipx="0" flipy="0"
+
+animation state="WARP_3"
+frame duration="0.1" x="339" y="2" w="50" h="82" originx="27" originy="80" flipx="0" flipy="0"
+
+animation state="WARP_4"
+frame duration="0.1" x="52" y="2" w="46" h="84" originx="23" originy="82" flipx="0" flipy="0"
+
+animation state="BAKUEN_1"
+frame duration="0.1" x="264" y="495" w="43" h="74" originx="22" originy="72" flipx="0" flipy="0"
+
+animation state="BAKUEN_2"
+frame duration="0.1" x="530" y="415" w="60" h="75" originx="24" originy="73" flipx="0" flipy="0"
+
+animation state="BAKUEN_3"
+frame duration="0.1" x="2" y="495" w="54" h="75" originx="25" originy="73" flipx="0" flipy="0"
+
+animation state="BAKUEN_4"
+frame duration="0.1" x="224" y="2" w="57" h="83" originx="20" originy="81" flipx="0" flipy="0"
+
+animation state="BUNSHIN_BAKUEN"
+frame duration="0.033" x="264" y="495" w="43" h="74" originx="22" originy="72" flipx="0" flipy="0"
+frame duration="0.033" x="530" y="415" w="60" h="75" originx="24" originy="73" flipx="0" flipy="0"
+frame duration="0.033" x="2" y="495" w="54" h="75" originx="25" originy="73" flipx="0" flipy="0"
+frame duration="0.067" x="224" y="2" w="57" h="83" originx="20" originy="81" flipx="0" flipy="0"
+frame duration="0.15" x="224" y="2" w="57" h="83" originx="20" originy="81" flipx="0" flipy="0"
+frame duration="0.5" x="224" y="2" w="57" h="83" originx="20" originy="81" flipx="0" flipy="0"
+
+animation state="BUNSHIN_SWORD"
+frame duration="0.133" x="60" y="495" w="43" h="74" originx="22" originy="72" flipx="0" flipy="0"
+frame duration="0.033" x="167" y="415" w="57" h="75" originx="24" originy="73" flipx="0" flipy="0"
+frame duration="0.033" x="228" y="415" w="54" h="75" originx="25" originy="73" flipx="0" flipy="0"
+frame duration="0.367" x="552" y="90" w="57" h="77" originx="20" originy="75" flipx="0" flipy="0"
+
+animation state="SHURIKEN_1"
+frame duration="0.1" x="2" y="649" w="46" h="115" originx="23" originy="113" flipx="0" flipy="0"
+
+animation state="SHURIKEN_2"
+frame duration="0.1" x="52" y="649" w="51" h="110" originx="28" originy="108" flipx="0" flipy="0"
+
+animation state="SHURIKEN_3"
+frame duration="0.1" x="107" y="649" w="43" h="106" originx="22" originy="104" flipx="0" flipy="0"
+
+animation state="SHURIKEN_4"
+frame duration="0.1" x="154" y="649" w="60" h="106" originx="24" originy="104" flipx="0" flipy="0"
+
+animation state="SHURIKEN_5"
+frame duration="0.1" x="218" y="649" w="54" h="107" originx="25" originy="105" flipx="0" flipy="0"
+
+animation state="SHURIKEN_6"
+frame duration="0.1" x="276" y="649" w="57" h="115" originx="20" originy="113" flipx="0" flipy="0"

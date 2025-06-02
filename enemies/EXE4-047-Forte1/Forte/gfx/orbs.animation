@@ -1,0 +1,8 @@
+imagePath="D:/ONB/Teblat Wonterk Server/resources/mods/enemies/EXE4-047-Forte1/Forte/gfx/orbs.png"
+
+animation state="0"
+blank duration="0.033"
+
+animation state="1"
+frame duration="0.083" x="0" y="0" w="38" h="10" originx="11" originy="53" flipx="0" flipy="0"
+frame duration="0.05" x="0" y="10" w="40" h="9" originx="12" originy="52" flipx="0" flipy="0"

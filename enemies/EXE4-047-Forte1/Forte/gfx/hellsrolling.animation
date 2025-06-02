@@ -1,0 +1,10 @@
+imagePath="D:\ONB\Teblat Wonterk Server\resources\mods\enemies\EXE4-047-Forte1\Forte\gfx\hellsrolling.png"
+
+animation state="0"
+frame duration="0.05" x="0" y="0" w="47" h="43" originx="27" originy="36" flipx="0" flipy="0"
+frame duration="0.05" x="47" y="0" w="46" h="47" originx="26" originy="40" flipx="0" flipy="0"
+frame duration="0.05" x="93" y="0" w="47" h="48" originx="27" originy="41" flipx="0" flipy="0"
+
+animation state="1"
+frame duration="0.05" x="140" y="0" w="28" h="62" originx="16" originy="56" flipx="0" flipy="0"
+frame duration="0.05" x="168" y="0" w="20" h="77" originx="11" originy="71" flipx="0" flipy="0"

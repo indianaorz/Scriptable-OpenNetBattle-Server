@@ -1,0 +1,22 @@
+imagePath="D:/ONB/Teblat Wonterk Server/resources/mods/enemies/EXE6-001-Metall/shared/gfx/shockwave.png"
+
+animation state="0"
+frame duration="0.067" x="148" y="0" w="29" h="28" originx="11" originy="27" flipx="0" flipy="0"
+frame duration="0.083" x="112" y="0" w="36" h="33" originx="17" originy="31" flipx="0" flipy="0"
+frame duration="0.083" x="75" y="0" w="37" h="35" originx="18" originy="33" flipx="0" flipy="0"
+frame duration="0.1" x="38" y="0" w="37" h="39" originx="22" originy="36" flipx="0" flipy="0"
+frame duration="0.083" x="0" y="0" w="38" h="42" originx="24" originy="39" flipx="0" flipy="0"
+
+animation state="1"
+frame duration="0.033" x="148" y="0" w="29" h="28" originx="11" originy="27" flipx="0" flipy="0"
+frame duration="0.05" x="112" y="0" w="36" h="33" originx="17" originy="31" flipx="0" flipy="0"
+frame duration="0.05" x="75" y="0" w="37" h="35" originx="18" originy="33" flipx="0" flipy="0"
+frame duration="0.067" x="38" y="0" w="37" h="39" originx="22" originy="36" flipx="0" flipy="0"
+frame duration="0.067" x="0" y="0" w="38" h="42" originx="24" originy="39" flipx="0" flipy="0"
+
+animation state="2"
+frame duration="0.017" x="148" y="0" w="29" h="28" originx="11" originy="27" flipx="0" flipy="0"
+frame duration="0.033" x="112" y="0" w="36" h="33" originx="17" originy="31" flipx="0" flipy="0"
+frame duration="0.033" x="75" y="0" w="37" h="35" originx="18" originy="33" flipx="0" flipy="0"
+frame duration="0.05" x="38" y="0" w="37" h="39" originx="22" originy="36" flipx="0" flipy="0"
+frame duration="0.05" x="0" y="0" w="38" h="42" originx="24" originy="39" flipx="0" flipy="0"

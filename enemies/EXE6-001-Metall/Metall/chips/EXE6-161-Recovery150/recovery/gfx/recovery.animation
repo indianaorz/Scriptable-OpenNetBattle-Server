@@ -1,0 +1,9 @@
+imagePath="D:/ONB/Teblat Wonterk Server/resources/mods/cards/EXE6-161-Recovery150/recovery/gfx/recovery.png"
+
+animation state="0"
+frame duration="0.017" x="31" y="82" w="31" h="29" originx="15" originy="27" flipx="0" flipy="0"
+frame duration="0.033" x="0" y="90" w="31" h="32" originx="15" originy="32" flipx="0" flipy="0"
+frame duration="0.033" x="0" y="48" w="31" h="42" originx="15" originy="43" flipx="0" flipy="0"
+frame duration="0.033" x="0" y="0" w="31" h="48" originx="15" originy="51" flipx="0" flipy="0"
+frame duration="0.05" x="31" y="0" w="31" h="43" originx="15" originy="55" flipx="0" flipy="0"
+frame duration="0.05" x="31" y="43" w="31" h="39" originx="15" originy="57" flipx="0" flipy="0"

@@ -1,0 +1,6 @@
+imagePath="D:\ONB\Teblat Wonterk Server\resources\mods\enemies\EXE4-047-Forte1\Forte\gfx\blackbarrier.png"
+
+animation state="0"
+frame duration="0.033" x="0" y="0" w="16" h="62" originx="-16" originy="68" flipx="0" flipy="0"
+frame duration="0.033" x="16" y="0" w="15" h="62" originx="-17" originy="68" flipx="0" flipy="0"
+frame duration="0.033" x="31" y="0" w="16" h="60" originx="-16" originy="67" flipx="0" flipy="0"
