@@ -1,170 +1,104 @@
--- jumping_enemy.lua
--- Defines an enemy that jumps to a random tile on its side every second,
--- structured similarly to the provided example and using Canodumb assets.
-
--- A no-operation function, useful for default event handlers.
-local noop = function () end
-
--- Asset paths (assuming _folderpath is provided by the game engine and points to the mod's asset directory)
--- These will be loaded in package_init.
-local CANODUMB_TEXTURE_PATH = _folderpath .. "floater.png"
-local CANODUMB_ANIMATION_PATH = _folderpath .. "floater.animation"
-local JUMP_SFX_PATH = _folderpath .. "cannon.ogg" -- Using Canodumb's cannon sound for jump
+local enemy_base = include("enemy_base.lua")
 local battle_helpers = include("battle_helpers.lua")
 local projectile = include("FloaterProjectile/entry.lua")
 
+local CANODUMB_TEXTURE_PATH = _folderpath .. "floater.png"
+local CANODUMB_ANIMATION_PATH = _folderpath .. "floater.animation"
+local JUMP_SFX_PATH = _folderpath .. "cannon.ogg"
 local TELEPORT_TEXTURE = Engine.load_texture(_folderpath .. "teleport.png")
 local TELEPORT_ANIM = _folderpath .. "teleport.animation"
-
-
--- Shadow-specific assets
 local SHADOW_TEXTURE  = Engine.load_texture(_folderpath .. "shadow.png")
-local SHADOW_ANIMPATH = _folderpath .. "shadow.animation"   -- a simple 1‑frame loop
+local SHADOW_ANIMPATH = _folderpath .. "shadow.animation"
 
--- Loaded assets (will be populated in package_init if not already loaded globally or per instance)
-local g_canodumb_texture = nil
+local g_texture = nil
 local g_jump_sfx = nil
--- Note: Animation path is usually loaded per instance via anim:load(path)
 
-local function perform_attack(self)
-    local anim = self.animation
-    anim:set_state("Shoot")
-    anim:set_playback(Playback.Once)
-    self.should_move = false -- Prevent further movement during attack
-    anim:on_complete(function()
-        projectile.create(self, 10)
-        anim:set_state(self.idle_anim_state)
-        anim:set_playback(Playback.Loop)
-        self.should_move = true -- Allow movement again after attack
-    end)
+local function create_shadow(self)
+    local node = self:create_node()
+    node:set_texture(SHADOW_TEXTURE, true)
+    local anim = Engine.Animation.new(SHADOW_ANIMPATH)
+    anim:set_state("default")
+    anim:set_playback(Playback.Loop)
+    anim:refresh(node)
+    self:register_component(Battle.Component.new(self, Lifetimes.Battlestep))
+    self._shadow_node = node
+    
 end
 
---- Main update function for the JumpingEnemy.
---- Called every frame by the game engine.
----@param self Entity The enemy instance.
----@param dt number Delta time (not explicitly used here as logic is frame-based).
-local function jumping_enemy_update(self, dt)
-    self.frame_counter = self.frame_counter + 1
-
-    if self.frame_counter >= self.jump_interval_frames then
-        --don't move if the enemy is currently performing an attack
-        if not self.should_move then
-            return
-        end
-        
-        self.frame_counter = 0 -- Reset counter
-
-        -- Play jump sound effect
-        if g_jump_sfx then
-            Engine.play_audio(g_jump_sfx, AudioPriority.Low)
-        end
-
-        battle_helpers.spawn_visual_artifact(self:get_field(), self:get_tile(), TELEPORT_TEXTURE, TELEPORT_ANIM,
-                "MEDIUM_TELEPORT_FROM",
-                0, 0)
-
-        -- Move the enemy immediately
-        if battle_helpers.move_random_adjacent(self) then
-            self.move_counter = self.move_counter + 1
-            if self.move_counter >= self.moves_before_attack then
-                self.move_counter = 0
-                self:perform_attack()
-            end
-        end
-            
-        -- Ensure animation returns to/stays in idle state
-        local anim = self.animation -- Access stored animation controller
-        if anim:get_current_state_name() ~= self.idle_anim_state or anim:get_playback() ~= Playback.Loop then
-            anim:set_state(self.idle_anim_state)
-            anim:set_playback(Playback.Loop)
-            anim:on_complete(nil) -- Clear any previous on_complete callback
-        end
-    end
-end
-
---- Initializes the JumpingEnemy instance.
----@param self Entity The enemy instance.
----@param character_info table Optional table with character data (not used in this version).
 function package_init(self, character_info)
-    -- Load assets once
-    if not g_canodumb_texture then
-        g_canodumb_texture = Engine.load_texture(CANODUMB_TEXTURE_PATH)
-    end
-    if not g_jump_sfx then
-        g_jump_sfx = Engine.load_audio(JUMP_SFX_PATH)
-    end
+    if not g_texture then g_texture = Engine.load_texture(CANODUMB_TEXTURE_PATH) end
+    if not g_jump_sfx then g_jump_sfx = Engine.load_audio(JUMP_SFX_PATH) end
 
-    -- Common Properties
     self:set_name("Floater")
-    self:set_health(50) -- Example health
-    self:set_height(64) -- Using Canodumb's height
-    self:set_element(Element.None) -- Or specify an element
+    self:set_health(50)
+    self:set_height(64)
+    self:set_element(Element.None)
+    if g_texture then self:set_texture(g_texture) end
+    self.animation = self:get_animation()
+    self.animation:load(CANODUMB_ANIMATION_PATH)
 
-    -- Texture and Animation
-    if g_canodumb_texture then
-        self:set_texture(g_canodumb_texture)
-    end
-    self.animation = self:get_animation() -- Get the animation controller attached to this entity
-    self.animation:load(CANODUMB_ANIMATION_PATH) -- Load Canodumb's animations
-
-    -- JumpingEnemy Specific Properties
-    self.jump_interval_frames = 20 -- Approx 1 second at 60 FPS
-    self.frame_counter = 0
-    self.idle_anim_state = "Idle"       -- From Canodumb
-    self.move_speed = 10
-    self.recovery_speed = 0
+    self.jump_interval_frames = 20
     self.move_counter = 0
     self.moves_before_attack = 6
     self.should_move = true
-    -- self.action_anim_state = "SHOOT_1" -- Removed: No specific action animation for jump to avoid "shoot" appearance
+    self.move_speed = 10
+    self.recovery_speed = 0
 
-    -- Set initial animation state
-    self.animation:set_state(self.idle_anim_state)
-    self.animation:set_playback(Playback.Loop)
-
-    -- Defense
     self.defense = Battle.DefenseVirusBody.new()
     self:add_defense_rule(self.defense)
 
-    -- Assign event handlers
-    self.update_func = jumping_enemy_update
-    self.perform_attack = perform_attack
-    
-    self.battle_start_func = function(enemy_instance)
-        enemy_instance.frame_counter = 0 -- Reset on battle start
-    end
+    create_shadow(self)
 
-    self.on_spawn_func = function(enemy_instance)
-        -- Randomize initial timer slightly to desynchronize multiple instances
-        enemy_instance.frame_counter = math.random(0, enemy_instance.jump_interval_frames -1)
-        -- Ensure animation is correctly set on spawn
-        if enemy_instance.animation:get_current_state_name() ~= enemy_instance.idle_anim_state then
-            enemy_instance.animation:set_state(enemy_instance.idle_anim_state)
-            enemy_instance.animation:set_playback(Playback.Loop)
+    local states = {}
+
+    states.IDLE = {
+        enter = function(enemy)
+            enemy.animation:set_state("Idle")
+            enemy.animation:set_playback(Playback.Loop)
+        end,
+        update = function(enemy, frame)
+            if frame >= enemy.jump_interval_frames then
+                enemy.frame_counter = 0
+                if enemy.should_move then
+                    if g_jump_sfx then Engine.play_audio(g_jump_sfx, AudioPriority.Low) end
+                    battle_helpers.spawn_visual_artifact(enemy:get_field(), enemy:get_tile(), TELEPORT_TEXTURE, TELEPORT_ANIM,
+                        "MEDIUM_TELEPORT_FROM", 0, 0)
+                    if battle_helpers.move_random_adjacent(enemy) then
+                        enemy.move_counter = enemy.move_counter + 1
+                        if enemy.move_counter >= enemy.moves_before_attack then
+                            enemy:set_state("START_ATTACK")
+                        end
+                    end
+                end
+            end
         end
-    end
-    
-    self.battle_end_func = noop
+    }
 
-     --------------------------------------------------------------------------
-    -- 2)  Create a child node that will act as the shadow
-    --------------------------------------------------------------------------
-    local shadow_node  = self:create_node()          -- child of the virus
-    shadow_node:set_texture(SHADOW_TEXTURE, true)
-    -- Separate Anim object because nodes don’t come with one.
-    local shadow_anim  = Engine.Animation.new(SHADOW_ANIMPATH)
-    shadow_anim:set_state("default")
-    shadow_anim:set_playback(Playback.Loop)
-    shadow_anim:refresh(shadow_node)
-    
-    local shadow_component          = Battle.Component.new(self, Lifetimes.Battlestep)
-    -- shadow_node:set_offset(0, 0)   -- or whatever puts it on the ground
-    
+    states.START_ATTACK = {
+        enter = function(enemy)
+            local anim = enemy.animation
+            anim:set_state("ShootStart")
+            anim:set_playback(Playback.Once)
+            enemy.should_move = false
+            anim:on_complete(function()
+                projectile.create(enemy, 10)
+                enemy:set_state("END_ATTACK")
+            end)
+        end
+    }
 
-    self:register_component(shadow_component)
-
-    -- keep a reference so we can access it later
-    self._shadow_node = shadow_node
+    states.END_ATTACK = {
+        enter = function(enemy)
+            local anim = enemy.animation
+            anim:set_state("ShootEnd")
+            anim:set_playback(Playback.Once)
+            anim:on_complete(function()
+                enemy.should_move = true
+                enemy.move_counter = 0
+                enemy:set_state("IDLE")
+            end)
+        end
+    }
 
     self.delete_func = function(enemy)
         if enemy._shadow_node then
@@ -176,8 +110,7 @@ function package_init(self, character_info)
         end
     end
 
-
-    -- Log.info("JumpingEnemy (new structure) initialized: " .. self:get_name())
+    enemy_base.init(self, {states = states, start_state = "IDLE"})
 end
 
 return package_init
