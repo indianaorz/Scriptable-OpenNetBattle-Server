@@ -68,37 +68,38 @@ Encounters.setup(table)
 
 `weight` is relative. All weights in an area are normalised to 1.0. Once configured you can call `Encounters.track_player(player_id)` when a player joins and `Encounters.handle_player_move(player_id, x, y, z)` whenever the player moves. The helpers take care of selecting and spawning the enemy package.
 
-## Proposed Data‑Driven State Machine
+### Using `enemy_base.lua`
 
-Many enemies re‑implement similar state and animation logic in Lua. To avoid duplication a simple state machine definition can be expressed as data. Below is a conceptual proposal for such a configuration.
+The Floater enemy ships with a small reusable helper at
+`assets/floater/floater/enemy_base.lua`. It implements a lightweight
+state machine and several common hooks so other enemies do not need to
+repeat boiler‑plate code.
+
+Features include:
+
+- Named states with optional `enter`, `update` and `exit` callbacks.
+- Automatic timers via a `duration` field and `next_state`/`on_complete`
+  transitions.
+- Event hooks for `spawn`, `battle_start`, `hit`, `stun` and `delete`.
+- A scheduler available through `enemy:schedule(frames, callback)`.
+- Basic animation management when a state specifies `animation` and
+  `playback`.
+
+Load the helper with `include("enemy_base.lua")` and initialise it:
 
 ```lua
-local enemy_cfg = {
-  name = "Example",
-  hp = 100,
-  states = {
-    idle = {
-      animation = "IDLE",
-      transitions = {
-        { on = "attack", to = "attack" },
-        { on = "hit",    to = "flinch" }
-      }
-    },
-    attack = {
-      animation = "ATTACK",
-      on_enter = function(self) do_attack(self) end,
-      on_complete = "idle"
-    },
-    flinch = {
-      animation = "FLINCH",
-      duration = 20,
-      on_complete = "idle"
-    }
-  }
-}
+enemy_base.init(self, {
+  states = states,
+  start_state = "IDLE",
+  on_delete = function(e)
+    -- cleanup logic
+  end
+  ,on_hit = function(e, from_stun)
+    -- react to damage
+  end
+})
 ```
 
-A generic helper could read this table and create the corresponding callbacks on the character object. New enemies would only need to provide animation names and optionally small snippets such as `do_attack`. This removes large blocks of boiler‑plate for setting animation states and managing transitions.
-
-A loader in `package_requires_scripts` could parse a JSON or Lua file describing the states and generate the runtime behaviour automatically. Existing enemies could gradually migrate to this approach to share common patterns like idle‑attack‑flinch loops without rewriting the logic each time.
+States can then be described purely in data while custom behaviour is
+added through the callbacks.
 

@@ -1,66 +1,280 @@
  (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/assets/floater/floater/enemy_base.lua b/assets/floater/floater/enemy_base.lua
-index 6c49547be5a2589227ae1c3e1dd2ae32fbe900d7..f3ce1f0f792a9526300692e46de53301102e471d 100644
+index 83bfca454fd3b177e6983fb165a7535ff676b0a8..a5f6f264b4aef9fe8c1d44fa436fc3ad0d29f7ed 100644
 --- a/assets/floater/floater/enemy_base.lua
 +++ b/assets/floater/floater/enemy_base.lua
-@@ -1,30 +1,34 @@
+@@ -1,34 +1,110 @@
  local EnemyBase = {}
  
  function EnemyBase.init(enemy, config)
      enemy._states = config.states or {}
      enemy._current_state = nil
++    enemy._state_timer = 0
++    enemy._state_data = nil
++    enemy._scheduled = {}
++    enemy._events = {}
      enemy.frame_counter = 0
++    enemy.animation = enemy.animation or enemy:get_animation()
  
-     function enemy:set_state(name)
+-    function enemy:set_state(name)
++    function enemy:on(event, callback)
++        enemy._events[event] = callback
++    end
++
++    local function dispatch(event, ...)
++        local cb = enemy._events[event]
++        if cb then cb(enemy, ...) end
++    end
++
++    function enemy:schedule(delay, cb)
++        table.insert(enemy._scheduled, {time = enemy.frame_counter + delay, cb = cb})
++    end
++
++    function enemy:add_state(name, def)
++        enemy._states[name] = def
++    end
++
++    function enemy:set_state(name, params)
          local state = enemy._states[name]
          if not state then return end
          if enemy._current_state and enemy._current_state.exit then
-             enemy._current_state.exit(enemy)
+-            enemy._current_state.exit(enemy)
++            enemy._current_state.exit(enemy, enemy._state_data)
          end
          enemy._current_state = state
          enemy.frame_counter = 0
-         if state.enter then state.enter(enemy) end
+-        if state.enter then state.enter(enemy) end
++        enemy._state_timer = state.duration or 0
++        enemy._state_data = params or {}
++
++        if state.animation then
++            enemy.animation:set_state(state.animation)
++            if state.playback then enemy.animation:set_playback(state.playback) end
++            enemy.animation:refresh(enemy:sprite())
++        end
++
++        if state.enter then state.enter(enemy, enemy._state_data) end
      end
  
-+    if config.start_state then
-+        enemy:set_state(config.start_state)
-+    end
-+
+-    if config.start_state then
+-        enemy:set_state(config.start_state)
+-    end
+-
      enemy.update_func = function(self)
          self.frame_counter = self.frame_counter + 1
++
++        for i = #self._scheduled, 1, -1 do
++            local act = self._scheduled[i]
++            if self.frame_counter >= act.time then
++                act.cb(self)
++                table.remove(self._scheduled, i)
++            end
++        end
++
          if not self._current_state and config.start_state then
              self:set_state(config.start_state)
          end
-         if self._current_state and self._current_state.update then
-             self._current_state.update(self, self.frame_counter)
+-        if self._current_state and self._current_state.update then
+-            self._current_state.update(self, self.frame_counter)
++
++        local state = self._current_state
++        if state then
++            if state.update then state.update(self, self.frame_counter, self._state_data) end
++
++            if self._state_timer > 0 then
++                self._state_timer = self._state_timer - 1
++                if self._state_timer <= 0 then
++                    if state.on_complete then
++                        if type(state.on_complete) == "string" then
++                            self:set_state(state.on_complete)
++                        else
++                            state.on_complete(self, self._state_data)
++                        end
++                    elseif state.next_state then
++                        self:set_state(state.next_state)
++                    end
++                end
++            end
          end
      end
++
++    enemy.delete_func = function(self) dispatch("delete") end
++    enemy.on_spawn_func = function(self) dispatch("spawn") end
++    enemy.battle_start_func = function(self) dispatch("battle_start") end
++    enemy.hit_func = function(self, from_stun) dispatch("hit", from_stun) end
++
++    enemy:register_status_callback(Hit.Flinch, function()
++        dispatch("hit", false)
++    end)
++    enemy:register_status_callback(Hit.Stun, function()
++        dispatch("hit", true)
++        dispatch("stun")
++    end)
++
++    if config.on_spawn then enemy:on("spawn", config.on_spawn) end
++    if config.on_delete then enemy:on("delete", config.on_delete) end
++    if config.on_battle_start then enemy:on("battle_start", config.on_battle_start) end
++    if config.on_hit then enemy:on("hit", config.on_hit) end
++    if config.on_stun then enemy:on("stun", config.on_stun) end
++
++    if config.start_state then
++        enemy:set_state(config.start_state)
++    end
  end
  
  return EnemyBase
+diff --git a/assets/floater/floater/entry.lua b/assets/floater/floater/entry.lua
+index 63c42b17ef571780ef0425a32b9be065d82f6cd5..3120cee103d6990026feb534891dd81cac5692e3 100644
+--- a/assets/floater/floater/entry.lua
++++ b/assets/floater/floater/entry.lua
+@@ -78,35 +78,40 @@ function package_init(self, character_info)
+         enter = function(enemy)
+             local anim = enemy.animation
+             anim:set_state("ShootStart")
+             anim:set_playback(Playback.Once)
+             enemy.should_move = false
+             anim:on_complete(function()
+                 projectile.create(enemy, 10)
+                 enemy:set_state("END_ATTACK")
+             end)
+         end
+     }
+ 
+     states.END_ATTACK = {
+         enter = function(enemy)
+             local anim = enemy.animation
+             anim:set_state("ShootEnd")
+             anim:set_playback(Playback.Once)
+             anim:on_complete(function()
+                 enemy.should_move = true
+                 enemy.move_counter = 0
+                 enemy:set_state("IDLE")
+             end)
+         end
+     }
+ 
+-    self.delete_func = function(enemy)
+-        if enemy._shadow_node then
+-            enemy._shadow_node:hide()
+-        end
+-    end
+-
+-    enemy_base.init(self, {states = states, start_state = "IDLE"})
+-end
++    enemy_base.init(self, {
++        states = states,
++        start_state = "IDLE",
++        on_delete = function(enemy)
++            if enemy._shadow_node then
++                enemy._shadow_node:hide()
++            end
++        end,
++        on_hit = function(enemy)
++            enemy.move_counter = 0
++        end
++    })
++end
+ 
+ return package_init
+diff --git a/docs/ENEMY_MODDING.md b/docs/ENEMY_MODDING.md
+index 60a14adf0c1cbf7221e0c9a22371d0642f46516d..94cc64c2d6566c9810f4acb714b5528cf7eeebe8 100644
+--- a/docs/ENEMY_MODDING.md
++++ b/docs/ENEMY_MODDING.md
+@@ -76,29 +76,64 @@ Many enemies re‑implement similar state and animation logic in Lua. To avoid d
+ local enemy_cfg = {
+   name = "Example",
+   hp = 100,
+   states = {
+     idle = {
+       animation = "IDLE",
+       transitions = {
+         { on = "attack", to = "attack" },
+         { on = "hit",    to = "flinch" }
+       }
+     },
+     attack = {
+       animation = "ATTACK",
+       on_enter = function(self) do_attack(self) end,
+       on_complete = "idle"
+     },
+     flinch = {
+       animation = "FLINCH",
+       duration = 20,
+       on_complete = "idle"
+     }
+   }
+ }
+ ```
+ 
+-A generic helper could read this table and create the corresponding callbacks on the character object. New enemies would only need to provide animation names and optionally small snippets such as `do_attack`. This removes large blocks of boiler‑plate for setting animation states and managing transitions.
+-
+-A loader in `package_requires_scripts` could parse a JSON or Lua file describing the states and generate the runtime behaviour automatically. Existing enemies could gradually migrate to this approach to share common patterns like idle‑attack‑flinch loops without rewriting the logic each time.
++A generic helper could read this table and create the corresponding callbacks on the character object. New enemies would only need to provide animation names and optionally small snippets such as `do_attack`. This removes large blocks of boiler‑plate for setting animation states and managing transitions.
++
++A loader in `package_requires_scripts` could parse a JSON or Lua file describing the states and generate the runtime behaviour automatically. Existing enemies could gradually migrate to this approach to share common patterns like idle‑attack‑flinch loops without rewriting the logic each time.
++
++### Using `enemy_base.lua`
++
++The Floater enemy ships with a small reusable helper at
++`assets/floater/floater/enemy_base.lua`. It implements a lightweight
++state machine and several common hooks so other enemies do not need to
++repeat boiler‑plate code.
++
++Features include:
++
++- Named states with optional `enter`, `update` and `exit` callbacks.
++- Automatic timers via a `duration` field and `next_state`/`on_complete`
++  transitions.
++- Event hooks for `spawn`, `battle_start`, `hit`, `stun` and `delete`.
++- A scheduler available through `enemy:schedule(frames, callback)`.
++- Basic animation management when a state specifies `animation` and
++  `playback`.
++
++Load the helper with `include("enemy_base.lua")` and initialise it:
++
++```lua
++enemy_base.init(self, {
++  states = states,
++  start_state = "IDLE",
++  on_delete = function(e)
++    -- cleanup logic
++  end
++  ,on_hit = function(e, from_stun)
++    -- react to damage
++  end
++})
++```
++
++States can then be described purely in data while custom behaviour is
++added through the callbacks.
+ 
 diff --git a/scripts/enemy_Base.lua b/scripts/enemy_Base.lua
-index 658a647ebd9253e354a6763b2136e69876fc22bc..3b702cd5f9d9a7f5352ddb60244a5dabfbb01958 100644
+index 28c34d75852bed410ced25baae114b29ad7c380b..72da6e6938233966f26f1ef218014ff7a7f167d2 100644
 --- a/scripts/enemy_Base.lua
 +++ b/scripts/enemy_Base.lua
-@@ -1,30 +1,34 @@
- local EnemyBase = {}
- 
- function EnemyBase.init(enemy, config)
-     enemy._states = config.states or {}
-     enemy._current_state = nil
-     enemy.frame_counter = 0
- 
-     function enemy:set_state(name)
-         local state = enemy._states[name]
-         if not state then return end
-         if enemy._current_state and enemy._current_state.exit then
-             enemy._current_state.exit(enemy)
-         end
-         enemy._current_state = state
-         enemy.frame_counter = 0
-         if state.enter then state.enter(enemy) end
-     end
- 
+@@ -1,34 +1,99 @@
+-local EnemyBase = {}
+-
+-function EnemyBase.init(enemy, config)
+-    enemy._states = config.states or {}
+-    enemy._current_state = nil
+-    enemy.frame_counter = 0
+-
+-    function enemy:set_state(name)
+-        local state = enemy._states[name]
+-        if not state then return end
+-        if enemy._current_state and enemy._current_state.exit then
+-            enemy._current_state.exit(enemy)
+-        end
+-        enemy._current_state = state
+-        enemy.frame_counter = 0
+-        if state.enter then state.enter(enemy) end
+-    end
+-
+-    if config.start_state then
+-        enemy:set_state(config.start_state)
+-    end
+-
 -    enemy.update_func = function(self)
 -        self.frame_counter = self.frame_counter + 1
 -        if not self._current_state and config.start_state then
@@ -71,22 +285,107 @@ index 658a647ebd9253e354a6763b2136e69876fc22bc..3b702cd5f9d9a7f5352ddb60244a5dab
 -        end
 -    end
 -end
-+    if config.start_state then
-+        enemy:set_state(config.start_state)
+-
+-return EnemyBase
++local EnemyBase = {}
++
++function EnemyBase.init(enemy, config)
++    enemy._states = config.states or {}
++    enemy._current_state = nil
++    enemy._state_timer = 0
++    enemy._state_data = nil
++    enemy._scheduled = {}
++    enemy._events = {}
++    enemy.frame_counter = 0
++    enemy.animation = enemy.animation or enemy:get_animation()
++
++    function enemy:on(event, callback)
++        enemy._events[event] = callback
++    end
++
++    local function dispatch(event, ...)
++        local cb = enemy._events[event]
++        if cb then cb(enemy, ...) end
++    end
++
++    function enemy:schedule(delay, cb)
++        table.insert(enemy._scheduled, {time = enemy.frame_counter + delay, cb = cb})
++    end
++
++    function enemy:add_state(name, def)
++        enemy._states[name] = def
++    end
++
++    function enemy:set_state(name, params)
++        local state = enemy._states[name]
++        if not state then return end
++        if enemy._current_state and enemy._current_state.exit then
++            enemy._current_state.exit(enemy, enemy._state_data)
++        end
++        enemy._current_state = state
++        enemy.frame_counter = 0
++        enemy._state_timer = state.duration or 0
++        enemy._state_data = params or {}
++
++        if state.animation then
++            enemy.animation:set_state(state.animation)
++            if state.playback then enemy.animation:set_playback(state.playback) end
++            enemy.animation:refresh(enemy:sprite())
++        end
++
++        if state.enter then state.enter(enemy, enemy._state_data) end
 +    end
 +
 +    enemy.update_func = function(self)
 +        self.frame_counter = self.frame_counter + 1
++
++        for i = #self._scheduled, 1, -1 do
++            local act = self._scheduled[i]
++            if self.frame_counter >= act.time then
++                act.cb(self)
++                table.remove(self._scheduled, i)
++            end
++        end
++
 +        if not self._current_state and config.start_state then
 +            self:set_state(config.start_state)
 +        end
-+        if self._current_state and self._current_state.update then
-+            self._current_state.update(self, self.frame_counter)
++
++        local state = self._current_state
++        if state then
++            if state.update then state.update(self, self.frame_counter, self._state_data) end
++
++            if self._state_timer > 0 then
++                self._state_timer = self._state_timer - 1
++                if self._state_timer <= 0 then
++                    if state.on_complete then
++                        if type(state.on_complete) == "string" then
++                            self:set_state(state.on_complete)
++                        else
++                            state.on_complete(self, self._state_data)
++                        end
++                    elseif state.next_state then
++                        self:set_state(state.next_state)
++                    end
++                end
++            end
 +        end
 +    end
++
++    enemy.delete_func = function(self) dispatch("delete") end
++    enemy.on_spawn_func = function(self) dispatch("spawn") end
++    enemy.battle_start_func = function(self) dispatch("battle_start") end
++
++    if config.on_spawn then enemy:on("spawn", config.on_spawn) end
++    if config.on_delete then enemy:on("delete", config.on_delete) end
++    if config.on_battle_start then enemy:on("battle_start", config.on_battle_start) end
++
++    if config.start_state then
++        enemy:set_state(config.start_state)
++    end
 +end
- 
- return EnemyBase
++
++return EnemyBase
  
 EOF
 )

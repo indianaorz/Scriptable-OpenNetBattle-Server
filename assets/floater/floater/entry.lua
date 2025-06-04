@@ -100,13 +100,18 @@ function package_init(self, character_info)
         end
     }
 
-    self.delete_func = function(enemy)
-        if enemy._shadow_node then
-            enemy._shadow_node:hide()
+    enemy_base.init(self, {
+        states = states,
+        start_state = "IDLE",
+        on_delete = function(enemy)
+            if enemy._shadow_node then
+                enemy._shadow_node:hide()
+            end
+        end,
+        on_hit = function(enemy)
+            enemy.move_counter = 0
         end
-    end
-
-    enemy_base.init(self, {states = states, start_state = "IDLE"})
+    })
 end
 
 return package_init
