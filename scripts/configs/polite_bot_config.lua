@@ -19,6 +19,19 @@ local config = {
     dialogue_response_negative = "Ah, I see.",
     dialogue_busy = "One moment please, I'm assisting someone else.",
 
+    initial_state = "first_meeting",
+    SCENES = {
+        first_meeting = {
+            { say = { text = "Hello there!" } },
+            { move = { direction = "south", distance = 1 } },
+            { set_state = { key = "state", value = "second_meeting" } }
+        },
+        second_meeting = {
+            { say = { text = "Good to see you again!" } },
+            { move = { direction = "north", distance = 1 } }
+        }
+    },
+
     -- Action Sequence
     ACTION_LIST = {
     "move south 2",
@@ -34,3 +47,4 @@ local config = {
 }
 }
 return config
+

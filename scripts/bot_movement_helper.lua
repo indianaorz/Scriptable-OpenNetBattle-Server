@@ -133,4 +133,30 @@ function BotMovementHelper.update_movement_on_tick(bot_object, dt, Net)
     end
 end
 
+function BotMovementHelper.move_async(bot_object, direction_str, distance)
+    local destination = BotMovementHelper.calculate_action_destination(
+        bot_object.current_tile_pos,
+        direction_str,
+        distance
+    )
+    if not destination then
+        return Async.create_promise(function(resolve) resolve(false) end)
+    end
+
+    bot_object.walk_target = destination
+    bot_object.walking = true
+
+    return Async.create_promise(function(resolve)
+        local function on_tick(event)
+            BotMovementHelper.update_movement_on_tick(bot_object, event.delta_time, Net)
+            if not bot_object.walking then
+                Net:remove_listener("tick", on_tick)
+                resolve(true)
+            end
+        end
+
+        Net:on("tick", on_tick)
+    end)
+end
+
 return BotMovementHelper

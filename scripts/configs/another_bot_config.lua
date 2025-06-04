@@ -19,6 +19,19 @@ local config = {
     dialogue_response_negative = "Suspicious. I am watching you.",
     dialogue_busy = "Standby. Attending to another individual.",
 
+    initial_state = "first_meeting",
+    SCENES = {
+        first_meeting = {
+            { say = { text = "Halt!" } },
+            { move = { direction = "north", distance = 1 } },
+            { set_state = { key = "state", value = "second_meeting" } }
+        },
+        second_meeting = {
+            { say = { text = "Proceed." } },
+            { move = { direction = "south", distance = 1 } }
+        }
+    },
+
     -- Action Sequence
     ACTION_LIST = {
         "move north 4",

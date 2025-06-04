@@ -1,6 +1,7 @@
 -- scripts/bot_base.lua
 local Direction = require("scripts/libs/direction")
 local BotMovementHelper = require("scripts/bot_movement_helper") -- Assuming BotMovementHelper is loaded successfully
+local SceneRunner = require("scripts/scene_runner")
 
 local BotBase = {}
 BotBase.__index = BotBase -- For metatable-based object orientation (optional but good practice)
@@ -61,6 +62,7 @@ function BotBase.new(config)
     instance.is_processing_action = false
     instance.action_list_paused = false
     instance.interacting_player_id = nil
+    instance.player_states = {}
 
     all_active_bots[bot_id_from_net] = instance -- Register this bot instance
     print("BOT_BASE: Initialized bot '" .. instance.config.bot_name .. "' with ID: " .. instance.bot_object.id)
@@ -111,8 +113,7 @@ end
 --- Method to handle actor interaction for a bot instance.
 function BotBase:handle_interaction(event_player_id)
     if self.interacting_player_id ~= nil then
-        if self.interacting_player_id == event_player_id then return -- Redundant event
-        else
+        if self.interacting_player_id == event_player_id then return else
             Net.message_player(event_player_id, self.config.dialogue_busy, self.bot_object.mug_texture_path, self.bot_object.mug_animation_path)
             return
         end
@@ -120,40 +121,27 @@ function BotBase:handle_interaction(event_player_id)
 
     self.interacting_player_id = event_player_id
     self.action_list_paused = true
-    print("BOT_BASE (" .. self.config.bot_name .. "): Interaction started with " .. event_player_id .. ". Pausing actions.")
 
-    Net.lock_player_input(self.interacting_player_id)
-    local bot_actual_pos = Net.get_bot_position(self.bot_object.id) or self.bot_object.current_tile_pos
-    local player_pos = Net.get_player_position(self.interacting_player_id)
-    if player_pos and bot_actual_pos then
-        Net.set_bot_direction(self.bot_object.id, Direction.from_points(bot_actual_pos, player_pos))
+    local state_table = self.player_states[event_player_id]
+    if not state_table then
+        state_table = { state = self.config.initial_state }
+        self.player_states[event_player_id] = state_table
     end
 
-    local self_instance = self -- Capture for the .and_then closure
-    Async.question_player(self.interacting_player_id,
-        self.config.dialogue_main_prompt,
-        self.bot_object.mug_texture_path,
-        self.bot_object.mug_animation_path
-    )
-    .and_then(function(response_code)
-        local player_who_finished = self_instance.interacting_player_id -- Should be the same as self.interacting_player_id
+    local scene_key = state_table.state or self.config.initial_state
+    local scene = nil
+    if self.config.SCENES then scene = self.config.SCENES[scene_key] end
 
-        local pcall_ok, err_msg = pcall(function()
-            if response_code == nil then return end
-            local response_category = BotMovementHelper.process_interaction_outcome(self_instance.bot_object, response_code)
-            local message_to_send
-            if response_category == "positive" then message_to_send = self_instance.config.dialogue_response_positive
-            else message_to_send = self_instance.config.dialogue_response_negative end
-            Net.message_player(player_who_finished, message_to_send, self_instance.bot_object.mug_texture_path, self_instance.bot_object.mug_animation_path)
-        end)
+    if not scene then
+        self.interacting_player_id = nil
+        self.action_list_paused = false
+        return
+    end
 
-        Net.unlock_player_input(player_who_finished)
-        if self_instance.interacting_player_id == player_who_finished then
-            self_instance.interacting_player_id = nil
-        end
-        self_instance.action_list_paused = false
-        print("BOT_BASE (" .. self_instance.config.bot_name .. "): Interaction ended with " .. player_who_finished .. ". Resuming actions.")
-        if not pcall_ok then print("BOT_BASE ERROR (" .. self_instance.config.bot_name .. "): Dialogue processing: " .. tostring(err_msg)) end
+    SceneRunner.run(self, event_player_id, scene)
+    .and_then(function()
+        self.interacting_player_id = nil
+        self.action_list_paused = false
     end)
 end
 

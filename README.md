@@ -687,6 +687,22 @@ Async.initiate_encounter(player_id, package_path, data?) -- promise, value = { p
 Async.initiate_pvp(player_1_id, player_2_id, field_script_path?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
 ```
 
+### Bot Scenes
+
+Bots using `bot_base.lua` can define simple cut-scenes.  Each bot stores per player
+state in `bot_instance.player_states[player_id]` and chooses a scene from
+`config.SCENES` based on the current state (defaulting to `config.initial_state`).
+
+A scene is an array of actions executed sequentially with `SceneRunner.run`:
+
+- `say { text = "..." }` &ndash; shows a message and waits until the player dismisses it.
+- `move { direction = "north", distance = 1 }` &ndash; moves the bot and waits for arrival.
+- `wait { time = 1.0 }` &ndash; pauses for a period of time.
+- `set_state { key = "state", value = "next" }` &ndash; updates the player's stored state.
+
+Scenes can update the stored state to progress to another scene on the next
+interaction.
+
 ### Event Emitters
 
 ```lua
