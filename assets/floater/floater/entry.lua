@@ -102,11 +102,7 @@ function package_init(self, character_info)
 
     self.delete_func = function(enemy)
         if enemy._shadow_node then
-            -- ① easiest: just stop drawing it
             enemy._shadow_node:hide()
-            -- ② or, cleanly remove it from the node tree
-            enemy:remove_node(enemy._shadow_node)
-            enemy._shadow_node = nil
         end
     end
 

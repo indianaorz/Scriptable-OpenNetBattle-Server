@@ -16,6 +16,10 @@ function EnemyBase.init(enemy, config)
         if state.enter then state.enter(enemy) end
     end
 
+    if config.start_state then
+        enemy:set_state(config.start_state)
+    end
+
     enemy.update_func = function(self)
         self.frame_counter = self.frame_counter + 1
         if not self._current_state and config.start_state then
