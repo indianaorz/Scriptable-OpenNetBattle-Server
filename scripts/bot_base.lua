@@ -2,6 +2,7 @@
 local Direction = require("scripts/libs/direction")
 local BotMovementHelper = require("scripts/bot_movement_helper") -- Assuming BotMovementHelper is loaded successfully
 local SceneRunner = require("scripts/scene_runner")
+local BotStateManager = require("scripts/bot_state_manager")
 
 local BotBase = {}
 BotBase.__index = BotBase -- For metatable-based object orientation (optional but good practice)
@@ -122,27 +123,30 @@ function BotBase:handle_interaction(event_player_id)
     self.interacting_player_id = event_player_id
     self.action_list_paused = true
 
-    local state_table = self.player_states[event_player_id]
-    if not state_table then
-        state_table = { state = self.config.initial_state }
+    Async.promisify(coroutine.create(function()
+        local all_states = Async.await(BotStateManager.load_states(event_player_id))
+        local state_table = all_states[self.config.bot_name]
+
+        if not state_table then
+            state_table = { state = self.config.initial_state }
+            all_states[self.config.bot_name] = state_table
+        end
+
         self.player_states[event_player_id] = state_table
-    end
 
-    local scene_key = state_table.state or self.config.initial_state
-    local scene = nil
-    if self.config.SCENES then scene = self.config.SCENES[scene_key] end
+        local scene_key = state_table.state or self.config.initial_state
+        local scene = nil
+        if self.config.SCENES then scene = self.config.SCENES[scene_key] end
 
-    if not scene then
+        if scene then
+            Async.await(SceneRunner.run(self, event_player_id, scene))
+            all_states[self.config.bot_name] = self.player_states[event_player_id]
+            Async.await(BotStateManager.save_states(event_player_id, all_states))
+        end
+
         self.interacting_player_id = nil
         self.action_list_paused = false
-        return
-    end
-
-    SceneRunner.run(self, event_player_id, scene)
-    .and_then(function()
-        self.interacting_player_id = nil
-        self.action_list_paused = false
-    end)
+    end))
 end
 
 --- Method to update a bot instance on tick.
