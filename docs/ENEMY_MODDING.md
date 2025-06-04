@@ -103,3 +103,48 @@ enemy_base.init(self, {
 States can then be described purely in data while custom behaviour is
 added through the callbacks.
 
+
+#### Event hooks
+
+Callbacks registered with `enemy:on(name, cb)` are stored per enemy instance and automatically tied to the engine's lifecycle hooks. The helper replaces the built-in `update_func`, `delete_func`, `on_spawn_func`, `battle_start_func` and `hit_func` so events fire whenever those functions run. Hooks are not tied to states, but to the creature as a whole. You can therefore listen for `hit` or `stun` even while in any state.
+
+```
+self:on("spawn", function(e)
+  -- executed once the enemy is placed on the field
+end)
+self:on("delete", function(e)
+  -- cleanup when removed
+end)
+```
+
+#### Spawning projectiles
+
+Projectiles are usually implemented as `Battle.Spell` objects. Create the spell, configure its hit properties and behaviour, then spawn it on the field:
+
+```lua
+local spell = Battle.Spell.new(self:get_team())
+spell:set_hit_props(HitProps.new(40, Hit.Impact | Hit.Flinch, Element.None,
+                                self:get_context(), Drag.None))
+spell.update_func = function(s)
+  s:get_current_tile():attack_entities(s)
+  local dest = s:get_tile(self:get_facing(), 1)
+  s:slide(dest, frames(4), frames(0), ActionOrder.Voluntary)
+end
+self:get_field():spawn(spell, self:get_tile(self:get_facing(), 1))
+```
+
+#### Creating obstacles
+
+Obstacles work similarly using `Battle.Obstacle.new`. They persist on the field until deleted. An obstacle can notify the enemy when it is destroyed via its `delete_func`:
+
+```lua
+local rock = Battle.Obstacle.new(self:get_team())
+rock:set_health(40)
+rock.delete_func = function(o)
+  -- obstacle disappeared, switch behaviour
+  self:set_state("IDLE")
+end
+self:get_field():spawn(rock, target_tile)
+```
+
+The enemy can also keep a reference to the spawned obstacle if it needs to check its state in later updates.
