@@ -11,6 +11,7 @@ local CANODUMB_TEXTURE_PATH = _folderpath .. "floater.png"
 local CANODUMB_ANIMATION_PATH = _folderpath .. "floater.animation"
 local JUMP_SFX_PATH = _folderpath .. "cannon.ogg" -- Using Canodumb's cannon sound for jump
 local battle_helpers = include("battle_helpers.lua")
+local projectile = include("FloaterProjectile/entry.lua")
 
 local TELEPORT_TEXTURE = Engine.load_texture(_folderpath .. "teleport.png")
 local TELEPORT_ANIM = _folderpath .. "teleport.animation"
@@ -25,6 +26,19 @@ local g_canodumb_texture = nil
 local g_jump_sfx = nil
 -- Note: Animation path is usually loaded per instance via anim:load(path)
 
+local function perform_attack(self)
+    local anim = self.animation
+    anim:set_state("Shoot")
+    anim:set_playback(Playback.Once)
+    self.should_move = false -- Prevent further movement during attack
+    anim:on_complete(function()
+        projectile.create(self, 10)
+        anim:set_state(self.idle_anim_state)
+        anim:set_playback(Playback.Loop)
+        self.should_move = true -- Allow movement again after attack
+    end)
+end
+
 --- Main update function for the JumpingEnemy.
 --- Called every frame by the game engine.
 ---@param self Entity The enemy instance.
@@ -33,6 +47,11 @@ local function jumping_enemy_update(self, dt)
     self.frame_counter = self.frame_counter + 1
 
     if self.frame_counter >= self.jump_interval_frames then
+        --don't move if the enemy is currently performing an attack
+        if not self.should_move then
+            return
+        end
+        
         self.frame_counter = 0 -- Reset counter
 
         -- Play jump sound effect
@@ -45,7 +64,13 @@ local function jumping_enemy_update(self, dt)
                 0, 0)
 
         -- Move the enemy immediately
-        battle_helpers.move_random_adjacent(self)
+        if battle_helpers.move_random_adjacent(self) then
+            self.move_counter = self.move_counter + 1
+            if self.move_counter >= self.moves_before_attack then
+                self.move_counter = 0
+                self:perform_attack()
+            end
+        end
             
         -- Ensure animation returns to/stays in idle state
         local anim = self.animation -- Access stored animation controller
@@ -88,6 +113,9 @@ function package_init(self, character_info)
     self.idle_anim_state = "Idle"       -- From Canodumb
     self.move_speed = 10
     self.recovery_speed = 0
+    self.move_counter = 0
+    self.moves_before_attack = 6
+    self.should_move = true
     -- self.action_anim_state = "SHOOT_1" -- Removed: No specific action animation for jump to avoid "shoot" appearance
 
     -- Set initial animation state
@@ -100,6 +128,7 @@ function package_init(self, character_info)
 
     -- Assign event handlers
     self.update_func = jumping_enemy_update
+    self.perform_attack = perform_attack
     
     self.battle_start_func = function(enemy_instance)
         enemy_instance.frame_counter = 0 -- Reset on battle start
