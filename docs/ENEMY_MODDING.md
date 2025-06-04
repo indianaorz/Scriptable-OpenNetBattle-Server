@@ -81,6 +81,7 @@ Features include:
 - Automatic timers via a `duration` field and `next_state`/`on_complete`
   transitions.
 - Event hooks for `spawn`, `battle_start`, `hit`, `stun` and `delete`.
+  The `hit` callback receives whether the hit came from a stun and the damage dealt.
 - A scheduler available through `enemy:schedule(frames, callback)`.
 - Basic animation management when a state specifies `animation` and
   `playback`.
@@ -94,8 +95,8 @@ enemy_base.init(self, {
   on_delete = function(e)
     -- cleanup logic
   end
-  ,on_hit = function(e, from_stun)
-    -- react to damage
+  ,on_hit = function(e, from_stun, damage)
+    -- react to damage amount
   end
 })
 ```
@@ -106,7 +107,7 @@ added through the callbacks.
 
 #### Event hooks
 
-Callbacks registered with `enemy:on(name, cb)` are stored per enemy instance and automatically tied to the engine's lifecycle hooks. The helper replaces the built-in `update_func`, `delete_func`, `on_spawn_func`, `battle_start_func` and `hit_func` so events fire whenever those functions run. Hooks are not tied to states, but to the creature as a whole. You can therefore listen for `hit` or `stun` even while in any state.
+Callbacks registered with `enemy:on(name, cb)` are stored per enemy instance and automatically tied to the engine's lifecycle hooks. The helper replaces the built-in `update_func`, `delete_func`, `on_spawn_func`, `battle_start_func` and `hit_func` so events fire whenever those functions run. It watches the character's health and emits `hit` with the damage dealt whenever it decreases. Hooks are not tied to states, but to the creature as a whole. You can therefore listen for `hit` or `stun` even while in any state.
 
 ```
 self:on("spawn", function(e)

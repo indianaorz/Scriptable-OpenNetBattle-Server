@@ -9,6 +9,7 @@ function EnemyBase.init(enemy, config)
     enemy._events = {}
     enemy.frame_counter = 0
     enemy.animation = enemy.animation or enemy:get_animation()
+    enemy._last_health = enemy:get_health()
 
     function enemy:on(event, callback)
         enemy._events[event] = callback
@@ -49,6 +50,12 @@ function EnemyBase.init(enemy, config)
 
     enemy.update_func = function(self)
         self.frame_counter = self.frame_counter + 1
+        local current_health = self:get_health()
+        if current_health < self._last_health then
+            local damage = self._last_health - current_health
+            dispatch("hit", false, damage)
+        end
+        self._last_health = current_health
 
         for i = #self._scheduled, 1, -1 do
             local act = self._scheduled[i]
@@ -86,13 +93,18 @@ function EnemyBase.init(enemy, config)
     enemy.delete_func = function(self) dispatch("delete") end
     enemy.on_spawn_func = function(self) dispatch("spawn") end
     enemy.battle_start_func = function(self) dispatch("battle_start") end
-    enemy.hit_func = function(self, from_stun) dispatch("hit", from_stun) end
+    enemy.hit_func = function(self, from_stun)
+        local current_health = self:get_health()
+        local damage = self._last_health - current_health
+        self._last_health = current_health
+        dispatch("hit", from_stun, damage)
+    end
 
     enemy:register_status_callback(Hit.Flinch, function()
-        dispatch("hit", false)
+        enemy.hit_func(false)
     end)
     enemy:register_status_callback(Hit.Stun, function()
-        dispatch("hit", true)
+        enemy.hit_func(true)
         dispatch("stun")
     end)
 

@@ -1,12 +1,173 @@
  (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/assets/floater/floater/enemy_base.lua b/assets/floater/floater/enemy_base.lua
+index be20c51d4df6ae5092a5adcdbe4717ad38b9e5d4..8a701a380a5bc3ee52703d103c00453e9254566c 100644
+--- a/assets/floater/floater/enemy_base.lua
++++ b/assets/floater/floater/enemy_base.lua
+@@ -1,110 +1,122 @@
+ local EnemyBase = {}
+ 
+ function EnemyBase.init(enemy, config)
+     enemy._states = config.states or {}
+     enemy._current_state = nil
+     enemy._state_timer = 0
+     enemy._state_data = nil
+     enemy._scheduled = {}
+     enemy._events = {}
+     enemy.frame_counter = 0
+-    enemy.animation = enemy.animation or enemy:get_animation()
++    enemy.animation = enemy.animation or enemy:get_animation()
++    enemy._last_health = enemy:get_health()
+ 
+     function enemy:on(event, callback)
+         enemy._events[event] = callback
+     end
+ 
+     local function dispatch(event, ...)
+         local cb = enemy._events[event]
+         if cb then cb(enemy, ...) end
+     end
+ 
+     function enemy:schedule(delay, cb)
+         table.insert(enemy._scheduled, {time = enemy.frame_counter + delay, cb = cb})
+     end
+ 
+     function enemy:add_state(name, def)
+         enemy._states[name] = def
+     end
+ 
+     function enemy:set_state(name, params)
+         local state = enemy._states[name]
+         if not state then return end
+         if enemy._current_state and enemy._current_state.exit then
+             enemy._current_state.exit(enemy, enemy._state_data)
+         end
+         enemy._current_state = state
+         enemy.frame_counter = 0
+         enemy._state_timer = state.duration or 0
+         enemy._state_data = params or {}
+ 
+         if state.animation then
+             enemy.animation:set_state(state.animation)
+             if state.playback then enemy.animation:set_playback(state.playback) end
+             enemy.animation:refresh(enemy:sprite())
+         end
+ 
+         if state.enter then state.enter(enemy, enemy._state_data) end
+     end
+ 
+     enemy.update_func = function(self)
+         self.frame_counter = self.frame_counter + 1
++        local current_health = self:get_health()
++        if current_health < self._last_health then
++            local damage = self._last_health - current_health
++            dispatch("hit", false, damage)
++        end
++        self._last_health = current_health
+ 
+         for i = #self._scheduled, 1, -1 do
+             local act = self._scheduled[i]
+             if self.frame_counter >= act.time then
+                 act.cb(self)
+                 table.remove(self._scheduled, i)
+             end
+         end
+ 
+         if not self._current_state and config.start_state then
+             self:set_state(config.start_state)
+         end
+ 
+         local state = self._current_state
+         if state then
+             if state.update then state.update(self, self.frame_counter, self._state_data) end
+ 
+             if self._state_timer > 0 then
+                 self._state_timer = self._state_timer - 1
+                 if self._state_timer <= 0 then
+                     if state.on_complete then
+                         if type(state.on_complete) == "string" then
+                             self:set_state(state.on_complete)
+                         else
+                             state.on_complete(self, self._state_data)
+                         end
+                     elseif state.next_state then
+                         self:set_state(state.next_state)
+                     end
+                 end
+             end
+         end
+     end
+ 
+     enemy.delete_func = function(self) dispatch("delete") end
+     enemy.on_spawn_func = function(self) dispatch("spawn") end
+     enemy.battle_start_func = function(self) dispatch("battle_start") end
+-    enemy.hit_func = function(self, from_stun) dispatch("hit", from_stun) end
++    enemy.hit_func = function(self, from_stun)
++        local current_health = self:get_health()
++        local damage = self._last_health - current_health
++        self._last_health = current_health
++        dispatch("hit", from_stun, damage)
++    end
+ 
+-    enemy:register_status_callback(Hit.Flinch, function()
+-        dispatch("hit", false)
+-    end)
+-    enemy:register_status_callback(Hit.Stun, function()
+-        dispatch("hit", true)
+-        dispatch("stun")
+-    end)
++    enemy:register_status_callback(Hit.Flinch, function()
++        enemy.hit_func(false)
++    end)
++    enemy:register_status_callback(Hit.Stun, function()
++        enemy.hit_func(true)
++        dispatch("stun")
++    end)
+ 
+     if config.on_spawn then enemy:on("spawn", config.on_spawn) end
+     if config.on_delete then enemy:on("delete", config.on_delete) end
+     if config.on_battle_start then enemy:on("battle_start", config.on_battle_start) end
+     if config.on_hit then enemy:on("hit", config.on_hit) end
+     if config.on_stun then enemy:on("stun", config.on_stun) end
+ 
+     if config.start_state then
+         enemy:set_state(config.start_state)
+     end
+ end
+ 
+ return EnemyBase
 diff --git a/docs/ENEMY_MODDING.md b/docs/ENEMY_MODDING.md
-index 4d01dd5c1c47527f5c8b5906761c457861cd020c..550fe0d1b59d346f1965fde9bffc510e8fcced63 100644
+index f1fd6c2f0ff22d5b7a55331767a15053582336df..ef3a8071222464c36b52437ea45890c19e809222 100644
 --- a/docs/ENEMY_MODDING.md
 +++ b/docs/ENEMY_MODDING.md
-@@ -81,25 +81,70 @@ Features include:
+@@ -58,77 +58,78 @@ local table = {
+     min_travel = 2,      -- tiles the player can move before checks begin
+     chance = 0.05,       -- probability per movement to trigger an encounter
+     preload = true,      -- optional: pre‑load assets
+     encounters = {
+       { asset_path = "/server/assets/floater.zip", weight = 0.1 },
+     }
+   }
+ }
+ Encounters.setup(table)
+ ```
+ 
+ `weight` is relative. All weights in an area are normalised to 1.0. Once configured you can call `Encounters.track_player(player_id)` when a player joins and `Encounters.handle_player_move(player_id, x, y, z)` whenever the player moves. The helpers take care of selecting and spawning the enemy package.
+ 
+ ### Using `enemy_base.lua`
+ 
+ The Floater enemy ships with a small reusable helper at
+ `assets/floater/floater/enemy_base.lua`. It implements a lightweight
+ state machine and several common hooks so other enemies do not need to
+ repeat boiler‑plate code.
+ 
+ Features include:
+ 
+ - Named states with optional `enter`, `update` and `exit` callbacks.
  - Automatic timers via a `duration` field and `next_state`/`on_complete`
    transitions.
- - Event hooks for `spawn`, `battle_start`, `hit`, `stun` and `delete`.
+-- Event hooks for `spawn`, `battle_start`, `hit`, `stun` and `delete`.
++- Event hooks for `spawn`, `battle_start`, `hit`, `stun` and `delete`.
++  The `hit` callback receives whether the hit came from a stun and the damage dealt.
  - A scheduler available through `enemy:schedule(frames, callback)`.
  - Basic animation management when a state specifies `animation` and
    `playback`.
@@ -20,8 +181,10 @@ index 4d01dd5c1c47527f5c8b5906761c457861cd020c..550fe0d1b59d346f1965fde9bffc510e
    on_delete = function(e)
      -- cleanup logic
    end
-   ,on_hit = function(e, from_stun)
-     -- react to damage
+-  ,on_hit = function(e, from_stun)
+-    -- react to damage
++  ,on_hit = function(e, from_stun, damage)
++    -- react to damage amount
    end
  })
  ```
@@ -29,51 +192,171 @@ index 4d01dd5c1c47527f5c8b5906761c457861cd020c..550fe0d1b59d346f1965fde9bffc510e
  States can then be described purely in data while custom behaviour is
  added through the callbacks.
  
+ 
+ #### Event hooks
+ 
+-Callbacks registered with `enemy:on(name, cb)` are stored per enemy instance and automatically tied to the engine's lifecycle hooks. The helper replaces the built-in `update_func`, `delete_func`, `on_spawn_func`, `battle_start_func` and `hit_func` so events fire whenever those functions run. Hooks are not tied to states, but to the creature as a whole. You can therefore listen for `hit` or `stun` even while in any state.
++Callbacks registered with `enemy:on(name, cb)` are stored per enemy instance and automatically tied to the engine's lifecycle hooks. The helper replaces the built-in `update_func`, `delete_func`, `on_spawn_func`, `battle_start_func` and `hit_func` so events fire whenever those functions run. It watches the character's health and emits `hit` with the damage dealt whenever it decreases. Hooks are not tied to states, but to the creature as a whole. You can therefore listen for `hit` or `stun` even while in any state.
+ 
+ ```
+ self:on("spawn", function(e)
+   -- executed once the enemy is placed on the field
+ end)
+ self:on("delete", function(e)
+   -- cleanup when removed
+ end)
+ ```
+ 
+ #### Spawning projectiles
+ 
+ Projectiles are usually implemented as `Battle.Spell` objects. Create the spell, configure its hit properties and behaviour, then spawn it on the field:
+ 
+ ```lua
+ local spell = Battle.Spell.new(self:get_team())
+ spell:set_hit_props(HitProps.new(40, Hit.Impact | Hit.Flinch, Element.None,
+                                 self:get_context(), Drag.None))
+ spell.update_func = function(s)
+   s:get_current_tile():attack_entities(s)
+   local dest = s:get_tile(self:get_facing(), 1)
+   s:slide(dest, frames(4), frames(0), ActionOrder.Voluntary)
+ end
+ self:get_field():spawn(spell, self:get_tile(self:get_facing(), 1))
+ ```
+diff --git a/scripts/enemy_Base.lua b/scripts/enemy_Base.lua
+index e081a251254aa2342128da8856d9af5726bd4ebf..b7058f6acefa683dfca5d8eb620d341f973dd108 100644
+--- a/scripts/enemy_Base.lua
++++ b/scripts/enemy_Base.lua
+@@ -1,99 +1,122 @@
+ local EnemyBase = {}
+ 
+ function EnemyBase.init(enemy, config)
+     enemy._states = config.states or {}
+     enemy._current_state = nil
+     enemy._state_timer = 0
+     enemy._state_data = nil
+     enemy._scheduled = {}
+     enemy._events = {}
+     enemy.frame_counter = 0
+-    enemy.animation = enemy.animation or enemy:get_animation()
++    enemy.animation = enemy.animation or enemy:get_animation()
++    enemy._last_health = enemy:get_health()
+ 
+     function enemy:on(event, callback)
+         enemy._events[event] = callback
+     end
+ 
+     local function dispatch(event, ...)
+         local cb = enemy._events[event]
+         if cb then cb(enemy, ...) end
+     end
+ 
+     function enemy:schedule(delay, cb)
+         table.insert(enemy._scheduled, {time = enemy.frame_counter + delay, cb = cb})
+     end
+ 
+     function enemy:add_state(name, def)
+         enemy._states[name] = def
+     end
+ 
+     function enemy:set_state(name, params)
+         local state = enemy._states[name]
+         if not state then return end
+         if enemy._current_state and enemy._current_state.exit then
+             enemy._current_state.exit(enemy, enemy._state_data)
+         end
+         enemy._current_state = state
+         enemy.frame_counter = 0
+         enemy._state_timer = state.duration or 0
+         enemy._state_data = params or {}
+ 
+         if state.animation then
+             enemy.animation:set_state(state.animation)
+             if state.playback then enemy.animation:set_playback(state.playback) end
+             enemy.animation:refresh(enemy:sprite())
+         end
+ 
+         if state.enter then state.enter(enemy, enemy._state_data) end
+     end
+ 
+-    enemy.update_func = function(self)
+-        self.frame_counter = self.frame_counter + 1
++    enemy.update_func = function(self)
++        self.frame_counter = self.frame_counter + 1
++        local current_health = self:get_health()
++        if current_health < self._last_health then
++            local damage = self._last_health - current_health
++            dispatch("hit", false, damage)
++        end
++        self._last_health = current_health
+ 
+         for i = #self._scheduled, 1, -1 do
+             local act = self._scheduled[i]
+             if self.frame_counter >= act.time then
+                 act.cb(self)
+                 table.remove(self._scheduled, i)
+             end
+         end
+ 
+         if not self._current_state and config.start_state then
+             self:set_state(config.start_state)
+         end
+ 
+         local state = self._current_state
+         if state then
+             if state.update then state.update(self, self.frame_counter, self._state_data) end
+ 
+             if self._state_timer > 0 then
+                 self._state_timer = self._state_timer - 1
+                 if self._state_timer <= 0 then
+                     if state.on_complete then
+                         if type(state.on_complete) == "string" then
+                             self:set_state(state.on_complete)
+                         else
+                             state.on_complete(self, self._state_data)
+                         end
+                     elseif state.next_state then
+                         self:set_state(state.next_state)
+                     end
+                 end
+             end
+         end
+     end
+ 
+     enemy.delete_func = function(self) dispatch("delete") end
+     enemy.on_spawn_func = function(self) dispatch("spawn") end
+-    enemy.battle_start_func = function(self) dispatch("battle_start") end
+-
+-    if config.on_spawn then enemy:on("spawn", config.on_spawn) end
+-    if config.on_delete then enemy:on("delete", config.on_delete) end
+-    if config.on_battle_start then enemy:on("battle_start", config.on_battle_start) end
++    enemy.battle_start_func = function(self) dispatch("battle_start") end
++    enemy.hit_func = function(self, from_stun)
++        local current_health = self:get_health()
++        local damage = self._last_health - current_health
++        self._last_health = current_health
++        dispatch("hit", from_stun, damage)
++    end
 +
-+#### Event hooks
++    enemy:register_status_callback(Hit.Flinch, function()
++        enemy.hit_func(false)
++    end)
++    enemy:register_status_callback(Hit.Stun, function()
++        enemy.hit_func(true)
++        dispatch("stun")
++    end)
 +
-+Callbacks registered with `enemy:on(name, cb)` are stored per enemy instance and automatically tied to the engine's lifecycle hooks. The helper replaces the built-in `update_func`, `delete_func`, `on_spawn_func`, `battle_start_func` and `hit_func` so events fire whenever those functions run. Hooks are not tied to states, but to the creature as a whole. You can therefore listen for `hit` or `stun` even while in any state.
-+
-+```
-+self:on("spawn", function(e)
-+  -- executed once the enemy is placed on the field
-+end)
-+self:on("delete", function(e)
-+  -- cleanup when removed
-+end)
-+```
-+
-+#### Spawning projectiles
-+
-+Projectiles are usually implemented as `Battle.Spell` objects. Create the spell, configure its hit properties and behaviour, then spawn it on the field:
-+
-+```lua
-+local spell = Battle.Spell.new(self:get_team())
-+spell:set_hit_props(HitProps.new(40, Hit.Impact | Hit.Flinch, Element.None,
-+                                self:get_context(), Drag.None))
-+spell.update_func = function(s)
-+  s:get_current_tile():attack_entities(s)
-+  local dest = s:get_tile(self:get_facing(), 1)
-+  s:slide(dest, frames(4), frames(0), ActionOrder.Voluntary)
-+end
-+self:get_field():spawn(spell, self:get_tile(self:get_facing(), 1))
-+```
-+
-+#### Creating obstacles
-+
-+Obstacles work similarly using `Battle.Obstacle.new`. They persist on the field until deleted. An obstacle can notify the enemy when it is destroyed via its `delete_func`:
-+
-+```lua
-+local rock = Battle.Obstacle.new(self:get_team())
-+rock:set_health(40)
-+rock.delete_func = function(o)
-+  -- obstacle disappeared, switch behaviour
-+  self:set_state("IDLE")
-+end
-+self:get_field():spawn(rock, target_tile)
-+```
-+
-+The enemy can also keep a reference to the spawned obstacle if it needs to check its state in later updates.
++    if config.on_spawn then enemy:on("spawn", config.on_spawn) end
++    if config.on_delete then enemy:on("delete", config.on_delete) end
++    if config.on_battle_start then enemy:on("battle_start", config.on_battle_start) end
++    if config.on_hit then enemy:on("hit", config.on_hit) end
++    if config.on_stun then enemy:on("stun", config.on_stun) end
+ 
+     if config.start_state then
+         enemy:set_state(config.start_state)
+     end
+ end
+ 
+ return EnemyBase
  
 EOF
 )
