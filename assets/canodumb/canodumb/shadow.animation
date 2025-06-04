@@ -1,4 +1,0 @@
-imagePath="shadow.png"
-
-animation state="default"
-frame duration="0.1" x="0" y="0" w="64" h="64" originx="32" originy="54" flipx="0"
