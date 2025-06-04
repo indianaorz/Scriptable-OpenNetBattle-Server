@@ -732,6 +732,7 @@ Windows requires for building lua [MSVC++](https://docs.microsoft.com/en-us/cpp/
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.
 
 If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md).
+For details on adding new enemies or encounters see [Enemy Modding](./docs/ENEMY_MODDING.md).
 
 ### Distributing
 
