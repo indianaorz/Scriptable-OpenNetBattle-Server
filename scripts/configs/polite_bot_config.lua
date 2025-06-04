@@ -19,16 +19,27 @@ local config = {
     dialogue_response_negative = "Ah, I see.",
     dialogue_busy = "One moment please, I'm assisting someone else.",
 
-    initial_state = "first_meeting",
+    initial_state = "intro",
+    determine_scene_key = function(global, state)
+        local p = global.story_progress or 0
+        if p >= 2 then
+            return "after_guard"
+        elseif p >= 1 then
+            return "waiting_for_guard"
+        else
+            return "intro"
+        end
+    end,
     SCENES = {
-        first_meeting = {
+        intro = {
             { say = { text = "Hello there!" } },
-            { move = { direction = "south", distance = 1 } },
-            { set_state = { key = "state", value = "second_meeting" } }
+            { set_global_state = { key = "story_progress", value = 1 } }
         },
-        second_meeting = {
-            { say = { text = "Good to see you again!" } },
-            { move = { direction = "north", distance = 1 } }
+        waiting_for_guard = {
+            { say = { text = "Have you spoken to the guard yet?" } }
+        },
+        after_guard = {
+            { say = { text = "Great, thanks for speaking with the guard!" } }
         }
     },
 

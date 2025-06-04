@@ -3,6 +3,7 @@ local Direction = require("scripts/libs/direction")
 local BotMovementHelper = require("scripts/bot_movement_helper") -- Assuming BotMovementHelper is loaded successfully
 local SceneRunner = require("scripts/scene_runner")
 local BotStateManager = require("scripts/bot_state_manager")
+local GlobalStateManager = require("scripts/global_state_manager")
 
 local BotBase = {}
 BotBase.__index = BotBase -- For metatable-based object orientation (optional but good practice)
@@ -126,6 +127,7 @@ function BotBase:handle_interaction(event_player_id)
     Async.promisify(coroutine.create(function()
         local all_states = Async.await(BotStateManager.load_states(event_player_id))
         local state_table = all_states[self.config.bot_name]
+        local global_states = Async.await(GlobalStateManager.load_states())
 
         if not state_table then
             state_table = { state = self.config.initial_state }
@@ -134,14 +136,20 @@ function BotBase:handle_interaction(event_player_id)
 
         self.player_states[event_player_id] = state_table
 
-        local scene_key = state_table.state or self.config.initial_state
+        local scene_key
+        if type(self.config.determine_scene_key) == "function" then
+            scene_key = self.config.determine_scene_key(global_states, state_table)
+        else
+            scene_key = state_table.state or self.config.initial_state
+        end
         local scene = nil
         if self.config.SCENES then scene = self.config.SCENES[scene_key] end
 
         if scene then
-            Async.await(SceneRunner.run(self, event_player_id, scene))
+            Async.await(SceneRunner.run(self, event_player_id, scene, global_states))
             all_states[self.config.bot_name] = self.player_states[event_player_id]
             Async.await(BotStateManager.save_states(event_player_id, all_states))
+            Async.await(GlobalStateManager.save_states(global_states))
         end
 
         self.interacting_player_id = nil

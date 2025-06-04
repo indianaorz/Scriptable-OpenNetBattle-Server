@@ -2,7 +2,7 @@ local BotMovementHelper = require("scripts/bot_movement_helper")
 
 local SceneRunner = {}
 
-function SceneRunner.run(bot_instance, player_id, scene)
+function SceneRunner.run(bot_instance, player_id, scene, global_states)
   if not scene then
     return Async.create_promise(function(resolve) resolve() end)
   end
@@ -24,6 +24,8 @@ function SceneRunner.run(bot_instance, player_id, scene)
         Async.await(Async.sleep(action.wait.time or action.wait))
       elseif action.set_state then
         bot_instance.player_states[player_id][action.set_state.key] = action.set_state.value
+      elseif action.set_global_state and global_states then
+        global_states[action.set_global_state.key] = action.set_global_state.value
       end
     end
   end))

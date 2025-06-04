@@ -19,16 +19,22 @@ local config = {
     dialogue_response_negative = "Suspicious. I am watching you.",
     dialogue_busy = "Standby. Attending to another individual.",
 
-    initial_state = "first_meeting",
+    initial_state = "idle",
+    determine_scene_key = function(global, state)
+        local p = global.story_progress or 0
+        if p == 1 then
+            return "meet"
+        else
+            return "idle"
+        end
+    end,
     SCENES = {
-        first_meeting = {
-            { say = { text = "Halt!" } },
-            { move = { direction = "north", distance = 1 } },
-            { set_state = { key = "state", value = "second_meeting" } }
+        idle = {
+            { say = { text = "State your purpose. I am GuardBot Alpha." } }
         },
-        second_meeting = {
-            { say = { text = "Proceed." } },
-            { move = { direction = "south", distance = 1 } }
+        meet = {
+            { say = { text = "Halt!" } },
+            { set_global_state = { key = "story_progress", value = 2 } }
         }
     },
 

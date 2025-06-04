@@ -1,21 +1,24 @@
  (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/memory/player_bot_states/.gitkeep b/memory/player_bot_states/.gitkeep
+diff --git a/memory/global_state.lua b/memory/global_state.lua
 new file mode 100644
-index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+index 0000000000000000000000000000000000000000..a564707544f53459c40ea75859a0a56f3beaa6b6
 --- /dev/null
-+++ b/memory/player_bot_states/.gitkeep
-
++++ b/memory/global_state.lua
+@@ -0,0 +1 @@
++return {}
 diff --git a/scripts/bot_base.lua b/scripts/bot_base.lua
-index 8258266af45277c7ea06e26b14e7f8d20b7f65ad..b376de89989bd2d430856041b9cf55d3375bff93 100644
+index 1464a040100a6256bbca968e4c0d2788e0b9a91c..5e2143f7ca8cf0f69a98268e97eba8a26cbef5eb 100644
 --- a/scripts/bot_base.lua
 +++ b/scripts/bot_base.lua
-@@ -1,29 +1,30 @@
+@@ -1,30 +1,31 @@
  -- scripts/bot_base.lua
  local Direction = require("scripts/libs/direction")
  local BotMovementHelper = require("scripts/bot_movement_helper") -- Assuming BotMovementHelper is loaded successfully
 -local SceneRunner = require("scripts/scene_runner")
+-local BotStateManager = require("scripts/bot_state_manager")
 +local SceneRunner = require("scripts/scene_runner")
 +local BotStateManager = require("scripts/bot_state_manager")
++local GlobalStateManager = require("scripts/global_state_manager")
  
  local BotBase = {}
  BotBase.__index = BotBase -- For metatable-based object orientation (optional but good practice)
@@ -41,16 +44,7 @@ index 8258266af45277c7ea06e26b14e7f8d20b7f65ad..b376de89989bd2d430856041b9cf55d3
      instance.config = config -- Store the provided config (includes dialogue, action list, etc.)
      
      local initial_pos_obj = Net.get_object_by_name(instance.config.area_id, instance.config.spawn_object_name)
-@@ -91,80 +92,83 @@ function BotBase:process_next_action()
- 
-     self.current_action_data = parsed_action
- 
-     if parsed_action.command == "move" then
-         local destination = BotMovementHelper.calculate_action_destination(self.bot_object.current_tile_pos, parsed_action.direction_str, parsed_action.distance)
-         if destination then
-             self.bot_object.walk_target = destination; self.bot_object.walking = true; self.is_processing_action = true
-         else
-             print("BOT_BASE (" .. self.config.bot_name .. "): Move target for '" .. action_string .. "' is invalid/blocked. Skipping.")
+@@ -101,70 +102,77 @@ function BotBase:process_next_action()
              self.is_processing_action = false; self.current_action_data = nil
          end
          self.current_action_index = self.current_action_index + 1
@@ -67,8 +61,7 @@ index 8258266af45277c7ea06e26b14e7f8d20b7f65ad..b376de89989bd2d430856041b9cf55d3
  --- Method to handle actor interaction for a bot instance.
  function BotBase:handle_interaction(event_player_id)
      if self.interacting_player_id ~= nil then
--        if self.interacting_player_id == event_player_id then return else
-+        if self.interacting_player_id == event_player_id then return else
+         if self.interacting_player_id == event_player_id then return else
              Net.message_player(event_player_id, self.config.dialogue_busy, self.bot_object.mug_texture_path, self.bot_object.mug_animation_path)
              return
          end
@@ -77,50 +70,49 @@ index 8258266af45277c7ea06e26b14e7f8d20b7f65ad..b376de89989bd2d430856041b9cf55d3
      self.interacting_player_id = event_player_id
      self.action_list_paused = true
  
--    local state_table = self.player_states[event_player_id]
--    if not state_table then
--        state_table = { state = self.config.initial_state }
--        self.player_states[event_player_id] = state_table
--    end
+-    Async.promisify(coroutine.create(function()
+-        local all_states = Async.await(BotStateManager.load_states(event_player_id))
+-        local state_table = all_states[self.config.bot_name]
 +    Async.promisify(coroutine.create(function()
 +        local all_states = Async.await(BotStateManager.load_states(event_player_id))
 +        local state_table = all_states[self.config.bot_name]
-+
-+        if not state_table then
-+            state_table = { state = self.config.initial_state }
-+            all_states[self.config.bot_name] = state_table
++        local global_states = Async.await(GlobalStateManager.load_states())
+ 
+         if not state_table then
+             state_table = { state = self.config.initial_state }
+             all_states[self.config.bot_name] = state_table
+         end
+ 
+         self.player_states[event_player_id] = state_table
+ 
+-        local scene_key = state_table.state or self.config.initial_state
+-        local scene = nil
+-        if self.config.SCENES then scene = self.config.SCENES[scene_key] end
+-
+-        if scene then
+-            Async.await(SceneRunner.run(self, event_player_id, scene))
+-            all_states[self.config.bot_name] = self.player_states[event_player_id]
+-            Async.await(BotStateManager.save_states(event_player_id, all_states))
+-        end
++        local scene_key
++        if type(self.config.determine_scene_key) == "function" then
++            scene_key = self.config.determine_scene_key(global_states, state_table)
++        else
++            scene_key = state_table.state or self.config.initial_state
 +        end
-+
-+        self.player_states[event_player_id] = state_table
-+
-+        local scene_key = state_table.state or self.config.initial_state
 +        local scene = nil
 +        if self.config.SCENES then scene = self.config.SCENES[scene_key] end
 +
 +        if scene then
-+            Async.await(SceneRunner.run(self, event_player_id, scene))
++            Async.await(SceneRunner.run(self, event_player_id, scene, global_states))
 +            all_states[self.config.bot_name] = self.player_states[event_player_id]
 +            Async.await(BotStateManager.save_states(event_player_id, all_states))
++            Async.await(GlobalStateManager.save_states(global_states))
 +        end
  
--    local scene_key = state_table.state or self.config.initial_state
--    local scene = nil
--    if self.config.SCENES then scene = self.config.SCENES[scene_key] end
--
--    if not scene then
--        self.interacting_player_id = nil
--        self.action_list_paused = false
--        return
--    end
--
--    SceneRunner.run(self, event_player_id, scene)
--    .and_then(function()
--        self.interacting_player_id = nil
--        self.action_list_paused = false
--    end)
-+        self.interacting_player_id = nil
-+        self.action_list_paused = false
-+    end))
+         self.interacting_player_id = nil
+         self.action_list_paused = false
+     end))
  end
  
  --- Method to update a bot instance on tick.
@@ -142,36 +134,167 @@ index 8258266af45277c7ea06e26b14e7f8d20b7f65ad..b376de89989bd2d430856041b9cf55d3
      end
  end
  
+diff --git a/scripts/configs/another_bot_config.lua b/scripts/configs/another_bot_config.lua
+index eaf5d67e88a42bc5411241d3a8e33077fa761ddc..a5355f602b99f3f9e2eb87fb0ade7fbc5e681d2c 100644
+--- a/scripts/configs/another_bot_config.lua
++++ b/scripts/configs/another_bot_config.lua
+@@ -1,44 +1,50 @@
+ -- scripts/configs/another_bot_config.lua
+ local config = {
+     -- Identity & Appearance
+     area_id = "default",
+     spawn_object_name = "Bot Spawn 2", -- For the second bot
+     bot_name = "GuardBot_Alpha",
+     texture_path = "/server/assets/prog.png",
+     animation_path = "/server/assets/prog.animation",
+     mug_texture_path = "resources/ow/prog/prog_mug.png",
+     mug_animation_path = "resources/ow/prog/prog_mug.animation",
  
- -- Global Event Handlers (These will dispatch to the correct bot instance)
- Net:on("actor_interaction", function(event)
-     local bot_instance = all_active_bots[event.actor_id]
-diff --git a/scripts/bot_state_manager.lua b/scripts/bot_state_manager.lua
+     -- Behavior
+     speed = 1.5, -- Slightly faster
+     bot_collision_size = 0.5,
+ 
+     -- Dialogue
+     dialogue_main_prompt = "State your purpose. I am GuardBot Alpha.",
+     dialogue_response_positive = "Understood. Proceed.",
+     dialogue_response_negative = "Suspicious. I am watching you.",
+     dialogue_busy = "Standby. Attending to another individual.",
+ 
+-    initial_state = "first_meeting",
+-    SCENES = {
+-        first_meeting = {
+-            { say = { text = "Halt!" } },
+-            { move = { direction = "north", distance = 1 } },
+-            { set_state = { key = "state", value = "second_meeting" } }
+-        },
+-        second_meeting = {
+-            { say = { text = "Proceed." } },
+-            { move = { direction = "south", distance = 1 } }
+-        }
+-    },
++    initial_state = "idle",
++    determine_scene_key = function(global, state)
++        local p = global.story_progress or 0
++        if p == 1 then
++            return "meet"
++        else
++            return "idle"
++        end
++    end,
++    SCENES = {
++        idle = {
++            { say = { text = "State your purpose. I am GuardBot Alpha." } }
++        },
++        meet = {
++            { say = { text = "Halt!" } },
++            { set_global_state = { key = "story_progress", value = 2 } }
++        }
++    },
+ 
+     -- Action Sequence
+     ACTION_LIST = {
+         "move north 4",
+         "wait 5.0",
+         "move south 4",
+         "wait 5.0",
+         "loop"
+     }
+ }
+ return config
+diff --git a/scripts/configs/polite_bot_config.lua b/scripts/configs/polite_bot_config.lua
+index 77ef2947d2ca597bd0c1a16743669d00651075ff..1a52df32b730c3b45c98ad9951baa787be2f2cc7 100644
+--- a/scripts/configs/polite_bot_config.lua
++++ b/scripts/configs/polite_bot_config.lua
+@@ -1,50 +1,61 @@
+ -- scripts/configs/polite_bot_config.lua
+ local config = {
+     -- Identity & Appearance
+     area_id = "default",
+     spawn_object_name = "Bot Spawn", -- For the first bot
+     bot_name = "PoliteActionBot_1",
+     texture_path = "/server/assets/prog.png",
+     animation_path = "/server/assets/prog.animation",
+     mug_texture_path = "resources/ow/prog/prog_mug.png",
+     mug_animation_path = "resources/ow/prog/prog_mug.animation",
+     
+     -- Behavior
+     speed = 1,
+     bot_collision_size = 0.5,
+     
+     -- Dialogue
+     dialogue_main_prompt = "Greetings! I am the first Polite Bot. How can I help you on my patrol?",
+     dialogue_response_positive = "Excellent!",
+     dialogue_response_negative = "Ah, I see.",
+     dialogue_busy = "One moment please, I'm assisting someone else.",
+ 
+-    initial_state = "first_meeting",
+-    SCENES = {
+-        first_meeting = {
+-            { say = { text = "Hello there!" } },
+-            { move = { direction = "south", distance = 1 } },
+-            { set_state = { key = "state", value = "second_meeting" } }
+-        },
+-        second_meeting = {
+-            { say = { text = "Good to see you again!" } },
+-            { move = { direction = "north", distance = 1 } }
+-        }
+-    },
++    initial_state = "intro",
++    determine_scene_key = function(global, state)
++        local p = global.story_progress or 0
++        if p >= 2 then
++            return "after_guard"
++        elseif p >= 1 then
++            return "waiting_for_guard"
++        else
++            return "intro"
++        end
++    end,
++    SCENES = {
++        intro = {
++            { say = { text = "Hello there!" } },
++            { set_global_state = { key = "story_progress", value = 1 } }
++        },
++        waiting_for_guard = {
++            { say = { text = "Have you spoken to the guard yet?" } }
++        },
++        after_guard = {
++            { say = { text = "Great, thanks for speaking with the guard!" } }
++        }
++    },
+ 
+     -- Action Sequence
+     ACTION_LIST = {
+     "move south 2",
+     "wait 2.0",
+     "move east 2",
+     "move north 1",
+     "move east 1",
+     "wait 1.5",
+     "move north 2",
+     "move west 3",
+     "move south 1",
+     "loop"
+ }
+ }
+ return config
+ 
+diff --git a/scripts/global_state_manager.lua b/scripts/global_state_manager.lua
 new file mode 100644
-index 0000000000000000000000000000000000000000..6fddca83bbac9c17dcaded0b79106ad589c01d53
+index 0000000000000000000000000000000000000000..9bc5a979d86d0082dc7f3dbeee806c55bd6072ab
 --- /dev/null
-+++ b/scripts/bot_state_manager.lua
-@@ -0,0 +1,58 @@
-+local BOT_STATE_FOLDER = "memory/player_bot_states/"
-+
-+local function url_encode(str)
-+  return (str:gsub("[^%w%-_.]", function(c)
-+    return string.format("%%%02X", string.byte(c))
-+  end))
-+end
++++ b/scripts/global_state_manager.lua
+@@ -0,0 +1,44 @@
++local GLOBAL_STATE_FILE = "memory/global_state.lua"
 +
 +local function encode_table(tbl)
 +  local lines = {"return {\n"}
-+  for bot, state in pairs(tbl) do
-+    table.insert(lines, string.format("  [%q] = {\n", bot))
-+    for k, v in pairs(state) do
-+      if type(v) == "string" then
-+        table.insert(lines, string.format("    %s = %q,\n", k, v))
-+      elseif type(v) == "number" or type(v) == "boolean" then
-+        table.insert(lines, string.format("    %s = %s,\n", k, tostring(v)))
-+      end
++  for k, v in pairs(tbl) do
++    if type(v) == "string" then
++      table.insert(lines, string.format("  [%q] = %q,\n", k, v))
++    elseif type(v) == "number" or type(v) == "boolean" then
++      table.insert(lines, string.format("  [%q] = %s,\n", k, tostring(v)))
 +    end
-+    table.insert(lines, "  },\n")
 +  end
 +  table.insert(lines, "}\n")
 +  return table.concat(lines)
@@ -187,13 +310,11 @@ index 0000000000000000000000000000000000000000..6fddca83bbac9c17dcaded0b79106ad5
 +  return {}
 +end
 +
-+local BotStateManager = {}
++local GlobalStateManager = {}
 +
-+function BotStateManager.load_states(player_id)
-+  local identity = Net.get_player_secret(player_id)
-+  local path = BOT_STATE_FOLDER .. url_encode(identity) .. ".lua"
++function GlobalStateManager.load_states()
 +  return Async.promisify(coroutine.create(function()
-+    local data = Async.await(Async.read_file(path))
++    local data = Async.await(Async.read_file(GLOBAL_STATE_FILE))
 +    if data and #data > 0 then
 +      return decode_table(data)
 +    else
@@ -202,14 +323,62 @@ index 0000000000000000000000000000000000000000..6fddca83bbac9c17dcaded0b79106ad5
 +  end))
 +end
 +
-+function BotStateManager.save_states(player_id, tbl)
-+  local identity = Net.get_player_secret(player_id)
-+  local path = BOT_STATE_FOLDER .. url_encode(identity) .. ".lua"
++function GlobalStateManager.save_states(tbl)
 +  local content = encode_table(tbl)
-+  return Async.write_file(path, content)
++  return Async.write_file(GLOBAL_STATE_FILE, content)
 +end
 +
-+return BotStateManager
++return GlobalStateManager
+diff --git a/scripts/scene_runner.lua b/scripts/scene_runner.lua
+index 51d7ebd8eba04abf56d6f7818a18331d864a6346..4723ea70caa87b894e667691223dbe283a5fc6fd 100644
+--- a/scripts/scene_runner.lua
++++ b/scripts/scene_runner.lua
+@@ -1,33 +1,35 @@
+ local BotMovementHelper = require("scripts/bot_movement_helper")
+ 
+ local SceneRunner = {}
+ 
+-function SceneRunner.run(bot_instance, player_id, scene)
++function SceneRunner.run(bot_instance, player_id, scene, global_states)
+   if not scene then
+     return Async.create_promise(function(resolve) resolve() end)
+   end
+ 
+   if bot_instance.player_states[player_id] == nil then
+     bot_instance.player_states[player_id] = {}
+   end
+ 
+-  return Async.promisify(coroutine.create(function()
+-    for _, action in ipairs(scene) do
+-      if action.say then
++  return Async.promisify(coroutine.create(function()
++    for _, action in ipairs(scene) do
++      if action.say then
+         Async.await(Async.message_player(player_id, action.say.text,
+           bot_instance.bot_object.mug_texture_path,
+           bot_instance.bot_object.mug_animation_path))
+       elseif action.move then
+         Async.await(BotMovementHelper.move_async(bot_instance.bot_object,
+           action.move.direction, action.move.distance))
+       elseif action.wait then
+         Async.await(Async.sleep(action.wait.time or action.wait))
+-      elseif action.set_state then
+-        bot_instance.player_states[player_id][action.set_state.key] = action.set_state.value
+-      end
+-    end
+-  end))
+-end
++      elseif action.set_state then
++        bot_instance.player_states[player_id][action.set_state.key] = action.set_state.value
++      elseif action.set_global_state and global_states then
++        global_states[action.set_global_state.key] = action.set_global_state.value
++      end
++    end
++  end))
++end
+ 
+ return SceneRunner
+ 
  
 EOF
 )
