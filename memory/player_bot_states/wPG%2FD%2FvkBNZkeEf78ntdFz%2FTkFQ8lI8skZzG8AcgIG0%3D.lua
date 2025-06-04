@@ -1,8 +1,8 @@
 return {
-  ["PoliteActionBot_1"] = {
+  ["GuardBot_Alpha"] = {
     state = "second_meeting",
   },
-  ["GuardBot_Alpha"] = {
+  ["PoliteActionBot_1"] = {
     state = "second_meeting",
   },
 }

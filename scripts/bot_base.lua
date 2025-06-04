@@ -127,7 +127,7 @@ function BotBase:handle_interaction(event_player_id)
     Async.promisify(coroutine.create(function()
         local all_states = Async.await(BotStateManager.load_states(event_player_id))
         local state_table = all_states[self.config.bot_name]
-        local global_states = Async.await(GlobalStateManager.load_states())
+        local global_states = Async.await(GlobalStateManager.load_player_states(event_player_id))
 
         if not state_table then
             state_table = { state = self.config.initial_state }
@@ -149,7 +149,7 @@ function BotBase:handle_interaction(event_player_id)
             Async.await(SceneRunner.run(self, event_player_id, scene, global_states))
             all_states[self.config.bot_name] = self.player_states[event_player_id]
             Async.await(BotStateManager.save_states(event_player_id, all_states))
-            Async.await(GlobalStateManager.save_states(global_states))
+            Async.await(GlobalStateManager.save_player_states(event_player_id, global_states))
         end
 
         self.interacting_player_id = nil

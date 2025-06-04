@@ -1,4 +1,11 @@
 local GLOBAL_STATE_FILE = "memory/global_state.lua"
+local PLAYER_STATE_FOLDER = "memory/player_global_states/"
+
+local function url_encode(str)
+  return (str:gsub("[^%w%-_.]", function(c)
+    return string.format("%%%02X", string.byte(c))
+  end))
+end
 
 local function encode_table(tbl)
   local lines = {"return {\n"}
@@ -24,6 +31,26 @@ local function decode_table(str)
 end
 
 local GlobalStateManager = {}
+
+function GlobalStateManager.load_player_states(player_id)
+  local identity = Net.get_player_secret(player_id)
+  local path = PLAYER_STATE_FOLDER .. url_encode(identity) .. ".lua"
+  return Async.promisify(coroutine.create(function()
+    local data = Async.await(Async.read_file(path))
+    if data and #data > 0 then
+      return decode_table(data)
+    else
+      return {}
+    end
+  end))
+end
+
+function GlobalStateManager.save_player_states(player_id, tbl)
+  local identity = Net.get_player_secret(player_id)
+  local path = PLAYER_STATE_FOLDER .. url_encode(identity) .. ".lua"
+  local content = encode_table(tbl)
+  return Async.write_file(path, content)
+end
 
 function GlobalStateManager.load_states()
   return Async.promisify(coroutine.create(function()
